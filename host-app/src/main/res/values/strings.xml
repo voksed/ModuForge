@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">ModuForge</string>
+
+    <string name="nav_modules">Modules</string>
+    <string name="nav_audit">Audit log</string>
+    <string name="nav_settings">Settings</string>
+    <string name="action_back">Back</string>
+
+    <string name="modules_empty_title">No modules installed</string>
+    <string name="modules_empty_body">The host does nothing on its own. Every feature arrives as a module that runs in a sandbox and holds only the permissions you grant.</string>
+    <string name="modules_permissions_count">Permissions declared: %1$d</string>
+
+
+    <string name="import_button">Import module (.mfrg)</string>
+    <string name="import_hint">The package is verified and shown for review first. Nothing runs until you install and enable it.</string>
+    <string name="import_rejected">Not installed</string>
+    <string name="import_title">Install “%1$s”?</string>
+    <string name="import_runtime">Runtime: %1$s</string>
+    <string name="import_signer_label">Signed by</string>
+    <string name="import_signer_hint">Fingerprint of the author\'s key. Compare it with the one the author published; anyone can put any name on a package.</string>
+    <string name="import_description_label">Description by the author (not verified)</string>
+    <string name="import_permissions_label">Permissions it may ask for</string>
+    <string name="import_author_reason">Author\'s reason: %1$s</string>
+    <string name="import_permissions_hint">Installing grants nothing. Each permission is asked for separately when the module needs it.</string>
+    <string name="import_install">Install</string>
+    <string name="import_update_title">Update “%1$s”?</string>
+    <string name="import_update_versions">Installed version %1$s will be replaced with %2$s. Its data and granted permissions are kept.</string>
+    <string name="import_update">Update</string>
+    <string name="module_autostart_switch">Start automatically</string>
+    <string name="module_autostart_hint">Starts the module when the phone boots and whenever ModuForge starts. Works only while the module is enabled and holds the background permission.</string>
+    <string name="start_permissions_title">Permissions for “%1$s”</string>
+    <string name="start_permissions_hint">Switch on what you allow. The module starts with these; anything left off stays blocked and can be changed later on the module screen.</string>
+    <string name="start_permissions_all">Allow all</string>
+    <string name="start_permissions_none">Clear all</string>
+    <string name="input_title">“%1$s” asks</string>
+    <string name="input_warning">The question above was written by the module. Your answer goes to %1$s (%2$s) and nowhere else. Do not type passwords for unrelated accounts.</string>
+    <string name="input_send">Send to module</string>
+    <string name="notifications_channel">Module notifications</string>
+    <string name="audit_module_updated">Module updated</string>
+    <string name="import_cancel">Cancel</string>
+
+    <string name="state_installed">Disabled</string>
+    <string name="state_enabled">Enabled</string>
+    <string name="state_running">Running</string>
+
+    <string name="module_title">Module</string>
+    <string name="module_not_found">This module is no longer installed.</string>
+    <string name="module_version_author">Version %1$s · %2$s</string>
+    <string name="module_author_unknown">author not stated</string>
+    <string name="module_enabled_switch">Enabled</string>
+    <string name="module_enabled_hint">A disabled module cannot run or request permissions.</string>
+    <string name="module_permissions_header">Permissions</string>
+    <string name="module_permissions_none">This module declares no permissions. It cannot reach the network, files, clipboard or any other resource.</string>
+    <string name="module_start">Start</string>
+    <string name="module_stop">Stop</string>
+    <string name="module_kill">Kill</string>
+    <string name="module_run_hint">A running module lives in its own isolated process. Stop asks it to finish; Kill destroys the process at once.</string>
+    <string name="module_ui_header">Interface of module “%1$s” · module content</string>
+    <string name="module_log_header">Module output</string>
+    <string name="module_log_empty">Nothing yet. Output is kept in memory only.</string>
+    <string name="module_uninstall">Uninstall</string>
+    <string name="module_uninstall_hint">Disable the module to uninstall it. Its grants are removed with it.</string>
+
+    <string name="grant_granted">Granted</string>
+    <string name="grant_not_granted">Not granted</string>
+    <string name="grant_targets">Authorized targets: %1$s</string>
+    <string name="grant_revoke">Revoke</string>
+
+    <string name="sensitivity_normal">Normal</string>
+    <string name="sensitivity_sensitive">Sensitive</string>
+    <string name="sensitivity_intrusive">Intrusive</string>
+
+    <string name="consent_title">Allow “%1$s”?</string>
+    <string name="consent_requester">%1$s (%2$s) is asking for this permission.</string>
+    <string name="consent_rationale_label">Reason given by the module (not verified):</string>
+    <string name="consent_target_label">Target: %1$s</string>
+    <string name="consent_intrusive_warning">This permission lets the module act against other systems. Probing systems you do not own or have no written permission to test may be illegal.</string>
+    <string name="consent_authorization_checkbox">I confirm I am authorized to test this target.</string>
+    <string name="consent_allow">Allow</string>
+    <string name="consent_deny">Deny</string>
+
+    <string name="audit_empty">Nothing recorded yet. Every permission request, decision and module change appears here.</string>
+    <string name="audit_target">Target: %1$s</string>
+    <string name="audit_module_installed">Module installed</string>
+    <string name="audit_module_rejected">Installation rejected</string>
+    <string name="audit_module_enabled">Module enabled</string>
+    <string name="audit_module_disabled">Module disabled</string>
+    <string name="audit_module_started">Module started</string>
+    <string name="audit_module_stopped">Module stopped</string>
+    <string name="audit_module_killed">Module killed</string>
+    <string name="audit_module_crashed">Module process died</string>
+    <string name="audit_module_callback_failed">Module callback failed</string>
+    <string name="audit_module_uninstalled">Module uninstalled</string>
+    <string name="audit_capability_requested">Permission requested</string>
+    <string name="audit_capability_granted">Permission granted</string>
+    <string name="audit_capability_denied">Permission denied</string>
+    <string name="audit_capability_revoked">Permission revoked</string>
+    <string name="audit_target_authorized">Target authorization confirmed</string>
+
+    <string name="audit_network_connected">Connection opened</string>
+    <string name="audit_network_refused">Connection refused</string>
+
+    <string name="background_channel">Running modules</string>
+    <plurals name="background_title">
+        <item quantity="one">%1$d module running in background</item>
+        <item quantity="other">%1$d modules running in background</item>
+    </plurals>
+    <string name="background_stopped_detail">stopped: host left the screen and the module holds no background permission</string>
+
+    <string name="appearance_title">Appearance</string>
+    <string name="appearance_mode">Theme</string>
+    <string name="appearance_mode_system">As in system</string>
+    <string name="appearance_mode_light">Light</string>
+    <string name="appearance_mode_dark">Dark</string>
+    <string name="appearance_color">Colours</string>
+    <string name="appearance_wallpaper">Colours from wallpaper</string>
+    <string name="appearance_wallpaper_hint">Follow the system palette. Pick a colour below to use your own instead.</string>
+    <string name="appearance_hex">Your colour, #RRGGBB</string>
+    <string name="appearance_palette">Palette</string>
+    <string name="appearance_palette_tonal">Calm</string>
+    <string name="appearance_palette_vibrant">Vivid</string>
+    <string name="appearance_palette_expressive">Expressive</string>
+    <string name="appearance_palette_neutral">Muted</string>
+    <string name="appearance_palette_monochrome">Monochrome</string>
+    <string name="appearance_palette_fidelity">Exact colour</string>
+    <string name="appearance_black">Black background</string>
+    <string name="appearance_black_hint">True black in the dark theme; saves power on OLED screens.</string>
+    <string name="appearance_corners">Corners</string>
+    <string name="appearance_corners_sharp">Sharp</string>
+    <string name="appearance_corners_standard">Standard</string>
+    <string name="appearance_corners_round">Round</string>
+    <string name="appearance_text_size">Text size: %1$d%%</string>
+    <string name="appearance_compact">Compact module list</string>
+    <string name="appearance_compact_hint">Rows instead of cards.</string>
+    <string name="appearance_nav_labels">Labels in the navigation bar</string>
+    <string name="appearance_reset">Reset appearance</string>
+
+    <string name="settings_versions">Host %1$s · Module SDK %2$s</string>
+    <string name="settings_offline_title">Works offline</string>
+    <string name="settings_offline_body">The host never connects to the network on its own. It opens connections only for modules you granted internet access, and records each one in the audit log.</string>
+    <string name="settings_responsible_title">Responsible use</string>
+    <string name="settings_responsible_body">ModuForge is for authorized testing, learning and automation. Use modules only against systems you own or are explicitly permitted to test. Intrusive permissions require confirming authorization for each target, and every such confirmation is recorded in the audit log.</string>
+
+    <string name="cap_network_outbound">Internet access</string>
+    <string name="cap_network_outbound_desc">Open connections to servers on the internet. The module can send anything it has access to and download content.</string>
+    <string name="cap_file_sandboxed">Private storage</string>
+    <string name="cap_file_sandboxed_desc">Read and write files in the module\'s own isolated folder. Other modules and your files stay out of reach.</string>
+    <string name="cap_file_shared">Shared files</string>
+    <string name="cap_file_shared_desc">Read and write files and folders you pick outside the module\'s own storage. These may hold personal data.</string>
+    <string name="cap_clipboard">Clipboard</string>
+    <string name="cap_clipboard_desc">Read and replace clipboard contents. The clipboard often holds passwords and other secrets.</string>
+    <string name="cap_notifications">Notifications</string>
+    <string name="cap_notifications_desc">Show notifications in the module\'s name.</string>
+    <string name="cap_background_execution">Run in background</string>
+    <string name="cap_background_execution_desc">Keep working while ModuForge is not on screen. This uses battery and the module acts without you watching.</string>
+    <string name="cap_ai_inference">AI models</string>
+    <string name="cap_ai_inference_desc">Send prompts to the AI models you configured. With a cloud provider the prompts leave the device and may be billed to your API key.</string>
+    <string name="cap_bot_gateway">Bot hosting</string>
+    <string name="cap_bot_gateway_desc">Run a long-lived bot using credentials stored by the host. The bot acts under that account.</string>
+    <string name="cap_device_info">Device information</string>
+    <string name="cap_device_info_desc">Read the device model, OS version and similar details that can identify this device.</string>
+    <string name="cap_local_network_scan">Local network scan</string>
+    <string name="cap_local_network_scan_desc">Probe hosts on the local network. Allowed only for targets you confirm you are authorized to test.</string>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            isolatedProcess: the service runs under a throwaway UID with no permissions,
+            no network and no access to the host's data directory.
+        -->
+        <service
+            android:name=".SandboxService"
+            android:exported="false"
+            android:isolatedProcess="true"
+            android:process=":sandbox" />
+    </application>
+
+</manifest>

@@ -1,0 +1,17 @@
+{
+  "id": "dev.moduforge.examples.tgecho",
+  "name": "Telegram echo bot",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "runtime": "lua",
+  "entry": "main.lua",
+  "author": "ModuForge",
+  "description": "A Telegram bot that answers every message with the same text. On the first start it asks for the token from @BotFather and keeps it in its encrypted storage.",
+  "permissions": ["NETWORK_OUTBOUND", "FILE_SANDBOXED", "BACKGROUND_EXECUTION", "NOTIFICATIONS"],
+  "permissionReasons": {
+    "NETWORK_OUTBOUND": "Talks to api.telegram.org.",
+    "FILE_SANDBOXED": "Keeps the bot token and the number of the last handled message.",
+    "BACKGROUND_EXECUTION": "Keeps answering while the app is not on screen.",
+    "NOTIFICATIONS": "Tells you when the bot goes online or stops because of an error."
+  }
+}

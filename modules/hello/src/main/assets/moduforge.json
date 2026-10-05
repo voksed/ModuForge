@@ -1,0 +1,10 @@
+{
+  "id": "dev.moduforge.modules.hello",
+  "name": "Hello",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "entry": "dev.moduforge.modules.hello.HelloModule",
+  "permissions": ["NOTIFICATIONS"],
+  "ui": "compose",
+  "author": "ModuForge"
+}

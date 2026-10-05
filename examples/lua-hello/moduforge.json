@@ -1,0 +1,16 @@
+{
+  "id": "dev.moduforge.examples.luahello",
+  "name": "Lua hello",
+  "version": "1.1.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "runtime": "lua",
+  "entry": "main.lua",
+  "author": "ModuForge",
+  "description": "Example of a script module: several source files, storage, one network request and a loop that runs until the module is stopped.",
+  "permissions": ["FILE_SANDBOXED", "NETWORK_OUTBOUND", "BACKGROUND_EXECUTION"],
+  "permissionReasons": {
+    "FILE_SANDBOXED": "Remembers how many times the module was started.",
+    "NETWORK_OUTBOUND": "Fetches example.com once to show networking.",
+    "BACKGROUND_EXECUTION": "Keeps ticking while the app is not on screen."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "dev.moduforge.modules.probe",
+  "name": "Sandbox probe",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "entry": "dev.moduforge.modules.probe.SandboxProbeModule",
+  "permissions": [],
+  "ui": "none",
+  "author": "ModuForge"
+}

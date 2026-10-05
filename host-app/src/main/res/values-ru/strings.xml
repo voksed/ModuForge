@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_modules">Модули</string>
+    <string name="nav_audit">Аудит-лог</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="action_back">Назад</string>
+
+    <string name="modules_empty_title">Модули не установлены</string>
+    <string name="modules_empty_body">Сам по себе хост ничего не делает. Любая функция — это модуль, который работает в песочнице и имеет только те разрешения, которые вы выдали.</string>
+    <string name="modules_permissions_count">Заявлено разрешений: %1$d</string>
+
+
+    <string name="import_button">Импортировать модуль (.mfrg)</string>
+    <string name="import_hint">Пакет сначала проверяется и показывается вам. Ничего не запускается, пока вы не установите и не включите модуль.</string>
+    <string name="import_rejected">Не установлено</string>
+    <string name="import_title">Установить «%1$s»?</string>
+    <string name="import_runtime">Среда выполнения: %1$s</string>
+    <string name="import_signer_label">Подписано</string>
+    <string name="import_signer_hint">Отпечаток ключа автора. Сверьте его с тем, что опубликовал автор: имя в пакете может написать кто угодно.</string>
+    <string name="import_description_label">Описание от автора (не проверено)</string>
+    <string name="import_permissions_label">Разрешения, которые модуль может запросить</string>
+    <string name="import_author_reason">Объяснение автора: %1$s</string>
+    <string name="import_permissions_hint">Установка ничего не выдаёт. Каждое разрешение запрашивается отдельно, когда оно понадобится модулю.</string>
+    <string name="import_install">Установить</string>
+    <string name="import_update_title">Обновить «%1$s»?</string>
+    <string name="import_update_versions">Установленная версия %1$s будет заменена на %2$s. Данные модуля и выданные разрешения сохранятся.</string>
+    <string name="import_update">Обновить</string>
+    <string name="module_autostart_switch">Запускать автоматически</string>
+    <string name="module_autostart_hint">Запускает модуль при включении телефона и при каждом старте ModuForge. Работает, только пока модуль включён и имеет разрешение на работу в фоне.</string>
+    <string name="start_permissions_title">Разрешения для «%1$s»</string>
+    <string name="start_permissions_hint">Включите то, что разрешаете. Модуль запустится с этим набором; остальное останется закрытым, изменить можно позже на экране модуля.</string>
+    <string name="start_permissions_all">Разрешить все</string>
+    <string name="start_permissions_none">Снять все</string>
+    <string name="input_title">«%1$s» спрашивает</string>
+    <string name="input_warning">Вопрос выше написан модулем. Ваш ответ получит %1$s (%2$s) и больше никто. Не вводите пароли от посторонних аккаунтов.</string>
+    <string name="input_send">Отправить модулю</string>
+    <string name="notifications_channel">Уведомления модулей</string>
+    <string name="audit_module_updated">Модуль обновлён</string>
+    <string name="import_cancel">Отмена</string>
+
+    <string name="state_installed">Отключён</string>
+    <string name="state_enabled">Включён</string>
+    <string name="state_running">Работает</string>
+
+    <string name="module_title">Модуль</string>
+    <string name="module_not_found">Этот модуль больше не установлен.</string>
+    <string name="module_version_author">Версия %1$s · %2$s</string>
+    <string name="module_author_unknown">автор не указан</string>
+    <string name="module_enabled_switch">Включён</string>
+    <string name="module_enabled_hint">Отключённый модуль не может запускаться и запрашивать разрешения.</string>
+    <string name="module_permissions_header">Разрешения</string>
+    <string name="module_permissions_none">Модуль не заявляет разрешений. У него нет доступа к сети, файлам, буферу обмена и другим ресурсам.</string>
+    <string name="module_start">Запустить</string>
+    <string name="module_stop">Остановить</string>
+    <string name="module_kill">Убить</string>
+    <string name="module_run_hint">Работающий модуль живёт в собственном изолированном процессе. «Остановить» просит его завершиться, «Убить» уничтожает процесс сразу.</string>
+    <string name="module_ui_header">Интерфейс модуля «%1$s» · содержимое модуля</string>
+    <string name="module_log_header">Вывод модуля</string>
+    <string name="module_log_empty">Пока пусто. Вывод хранится только в памяти.</string>
+    <string name="module_uninstall">Удалить</string>
+    <string name="module_uninstall_hint">Чтобы удалить модуль, отключите его. Выданные ему разрешения удаляются вместе с ним.</string>
+
+    <string name="grant_granted">Выдано</string>
+    <string name="grant_not_granted">Не выдано</string>
+    <string name="grant_targets">Авторизованные цели: %1$s</string>
+    <string name="grant_revoke">Отозвать</string>
+
+    <string name="sensitivity_normal">Обычное</string>
+    <string name="sensitivity_sensitive">Чувствительное</string>
+    <string name="sensitivity_intrusive">Интрузивное</string>
+
+    <string name="consent_title">Разрешить «%1$s»?</string>
+    <string name="consent_requester">%1$s (%2$s) запрашивает это разрешение.</string>
+    <string name="consent_rationale_label">Причина, указанная модулем (не проверена):</string>
+    <string name="consent_target_label">Цель: %1$s</string>
+    <string name="consent_intrusive_warning">Это разрешение позволяет модулю действовать против других систем. Проверка систем, которые вам не принадлежат и на тестирование которых нет письменного разрешения, может быть незаконной.</string>
+    <string name="consent_authorization_checkbox">Подтверждаю, что у меня есть право тестировать эту цель.</string>
+    <string name="consent_allow">Разрешить</string>
+    <string name="consent_deny">Отклонить</string>
+
+    <string name="audit_empty">Записей пока нет. Здесь появляется каждый запрос разрешения, каждое решение и каждое изменение модулей.</string>
+    <string name="audit_target">Цель: %1$s</string>
+    <string name="audit_module_installed">Модуль установлен</string>
+    <string name="audit_module_rejected">Установка отклонена</string>
+    <string name="audit_module_enabled">Модуль включён</string>
+    <string name="audit_module_disabled">Модуль отключён</string>
+    <string name="audit_module_started">Модуль запущен</string>
+    <string name="audit_module_stopped">Модуль остановлен</string>
+    <string name="audit_module_killed">Модуль убит</string>
+    <string name="audit_module_crashed">Процесс модуля завершился</string>
+    <string name="audit_module_callback_failed">Сбой обратного вызова модуля</string>
+    <string name="audit_module_uninstalled">Модуль удалён</string>
+    <string name="audit_capability_requested">Запрошено разрешение</string>
+    <string name="audit_capability_granted">Разрешение выдано</string>
+    <string name="audit_capability_denied">В разрешении отказано</string>
+    <string name="audit_capability_revoked">Разрешение отозвано</string>
+    <string name="audit_target_authorized">Подтверждена авторизация цели</string>
+
+    <string name="audit_network_connected">Соединение открыто</string>
+    <string name="audit_network_refused">В соединении отказано</string>
+
+    <string name="background_channel">Работающие модули</string>
+    <plurals name="background_title">
+        <item quantity="one">В фоне работает %1$d модуль</item>
+        <item quantity="few">В фоне работают %1$d модуля</item>
+        <item quantity="many">В фоне работают %1$d модулей</item>
+        <item quantity="other">В фоне работают %1$d модуля</item>
+    </plurals>
+    <string name="background_stopped_detail">остановлен: хост ушёл с экрана, а у модуля нет разрешения на работу в фоне</string>
+
+    <string name="appearance_title">Оформление</string>
+    <string name="appearance_mode">Тема</string>
+    <string name="appearance_mode_system">Как в системе</string>
+    <string name="appearance_mode_light">Светлая</string>
+    <string name="appearance_mode_dark">Тёмная</string>
+    <string name="appearance_color">Цвета</string>
+    <string name="appearance_wallpaper">Цвета из обоев</string>
+    <string name="appearance_wallpaper_hint">Следовать системной палитре. Чтобы задать свой цвет, выберите его ниже.</string>
+    <string name="appearance_hex">Свой цвет, #RRGGBB</string>
+    <string name="appearance_palette">Палитра</string>
+    <string name="appearance_palette_tonal">Спокойная</string>
+    <string name="appearance_palette_vibrant">Яркая</string>
+    <string name="appearance_palette_expressive">Выразительная</string>
+    <string name="appearance_palette_neutral">Приглушённая</string>
+    <string name="appearance_palette_monochrome">Монохром</string>
+    <string name="appearance_palette_fidelity">Точный цвет</string>
+    <string name="appearance_black">Чёрный фон</string>
+    <string name="appearance_black_hint">Настоящий чёрный в тёмной теме; экономит заряд на OLED-экранах.</string>
+    <string name="appearance_corners">Углы</string>
+    <string name="appearance_corners_sharp">Острые</string>
+    <string name="appearance_corners_standard">Обычные</string>
+    <string name="appearance_corners_round">Круглые</string>
+    <string name="appearance_text_size">Размер текста: %1$d%%</string>
+    <string name="appearance_compact">Компактный список модулей</string>
+    <string name="appearance_compact_hint">Строки вместо карточек.</string>
+    <string name="appearance_nav_labels">Подписи в панели навигации</string>
+    <string name="appearance_reset">Сбросить оформление</string>
+
+    <string name="settings_versions">Хост %1$s · SDK модулей %2$s</string>
+    <string name="settings_offline_title">Работает без сети</string>
+    <string name="settings_offline_body">Сам хост никогда не подключается к сети. Он открывает соединения только для модулей, которым вы выдали доступ в интернет, и записывает каждое в аудит-лог.</string>
+    <string name="settings_responsible_title">Ответственное использование</string>
+    <string name="settings_responsible_body">ModuForge предназначен для авторизованного тестирования, обучения и автоматизации. Используйте модули только против систем, которые принадлежат вам или которые вам явно разрешено тестировать. Интрузивные разрешения требуют подтверждать авторизацию для каждой цели, и каждое подтверждение записывается в аудит-лог.</string>
+
+    <string name="cap_network_outbound">Доступ в интернет</string>
+    <string name="cap_network_outbound_desc">Устанавливать соединения с серверами в интернете. Модуль сможет отправить всё, к чему имеет доступ, и загружать данные.</string>
+    <string name="cap_file_sandboxed">Собственное хранилище</string>
+    <string name="cap_file_sandboxed_desc">Читать и записывать файлы в собственной изолированной папке модуля. Другие модули и ваши файлы остаются недоступны.</string>
+    <string name="cap_file_shared">Общие файлы</string>
+    <string name="cap_file_shared_desc">Читать и записывать выбранные вами файлы и папки вне хранилища модуля. В них могут быть личные данные.</string>
+    <string name="cap_clipboard">Буфер обмена</string>
+    <string name="cap_clipboard_desc">Читать и заменять содержимое буфера обмена. В буфере часто оказываются пароли и другие секреты.</string>
+    <string name="cap_notifications">Уведомления</string>
+    <string name="cap_notifications_desc">Показывать уведомления от имени модуля.</string>
+    <string name="cap_background_execution">Работа в фоне</string>
+    <string name="cap_background_execution_desc">Продолжать работу, когда ModuForge не на экране. Расходует заряд, а модуль действует без вашего наблюдения.</string>
+    <string name="cap_ai_inference">ИИ-модели</string>
+    <string name="cap_ai_inference_desc">Отправлять запросы настроенным вами ИИ-моделям. С облачным провайдером запросы покидают устройство и могут оплачиваться с вашего API-ключа.</string>
+    <string name="cap_bot_gateway">Хостинг ботов</string>
+    <string name="cap_bot_gateway_desc">Держать долгоживущего бота с учётными данными, которые хранит хост. Бот действует от имени этой учётной записи.</string>
+    <string name="cap_device_info">Сведения об устройстве</string>
+    <string name="cap_device_info_desc">Читать модель устройства, версию ОС и похожие данные, по которым можно опознать устройство.</string>
+    <string name="cap_local_network_scan">Сканирование локальной сети</string>
+    <string name="cap_local_network_scan_desc">Опрашивать узлы локальной сети. Разрешается только для целей, право на тестирование которых вы подтвердили.</string>
+</resources>
