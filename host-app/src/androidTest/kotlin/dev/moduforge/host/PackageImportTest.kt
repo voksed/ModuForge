@@ -18,7 +18,9 @@ import dev.moduforge.sandbox.ModuleStorage
 import dev.moduforge.sandbox.ModulePackageStore
 import dev.moduforge.sandbox.PackageInspection
 import dev.moduforge.sandbox.SandboxModuleRuntime
+import dev.moduforge.core.authoring.LocalModules
 import dev.moduforge.core.module.StopRequest
+import dev.moduforge.sdk.Capability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
@@ -178,6 +180,40 @@ class PackageImportTest {
             assertTrue(manager.stop(helloId))
         } finally {
             runtime.kill(helloId)
+        }
+    }
+
+    @Test
+    fun moduleWrittenOnTheDeviceRunsAndCanBeEdited() = runBlocking {
+        val id = "local.note"
+        suspend fun runOnce(expected: String) {
+            assertTrue(manager.start(id))
+            withTimeout(30_000) { logs.observe(id).first { lines -> lines.any { it.message == expected } } }
+            // The script has ended; the host would stop the module on its request.
+            manager.stop(id)
+        }
+        try {
+            val first = LocalModules.manifest(id, "Note", "mf.log('v1')", emptySet(), previous = null)
+            assertTrue(installer.saveLocal(first, "mf.log('v1')") is InstallResult.Installed)
+            assertNull(registry.find(id)?.signer)
+            assertEquals("mf.log('v1')", installer.readLocalSource(id))
+            assertTrue(manager.setEnabled(id, true))
+            runOnce("v1")
+
+            val edited = "mf.storage.write('n', 'x')\nmf.log('v2')"
+            val second = LocalModules.manifest(id, "Note", edited, emptySet(), first)
+            assertTrue(installer.saveLocal(second, edited) is InstallResult.Installed)
+            assertEquals("1.0.1", registry.find(id)?.manifest?.version)
+            assertEquals(listOf(Capability.FILE_SANDBOXED), registry.find(id)?.manifest?.permissions)
+            assertEquals(edited, installer.readLocalSource(id))
+            runOnce("v2")
+
+            val signed = ByteArrayOutputStream().also {
+                ModulePackageWriter.write(it, manifest().replace(moduleId, id), sources, key)
+            }.toByteArray()
+            assertTrue("a package must not replace it", installer.inspect { signed.inputStream() } is PackageInspection.Rejected)
+        } finally {
+            runtime.kill(id)
         }
     }
 

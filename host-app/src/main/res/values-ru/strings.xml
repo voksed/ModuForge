@@ -10,8 +10,23 @@
     <string name="modules_permissions_count">Заявлено разрешений: %1$d</string>
 
 
-    <string name="import_button">Импортировать модуль (.mfrg)</string>
-    <string name="import_hint">Пакет сначала проверяется и показывается вам. Ничего не запускается, пока вы не установите и не включите модуль.</string>
+    <string name="create_button">Создать модуль</string>
+    <string name="create_hint">Напишите скрипт прямо здесь: выберите заготовку, поправьте, запустите. Компьютер не нужен.</string>
+    <string name="create_title">С чего начать</string>
+    <string name="template_telegram">Telegram-бот</string>
+    <string name="template_watcher">Наблюдатель за страницей с уведомлениями</string>
+    <string name="template_empty">Пустой скрипт</string>
+    <string name="editor_title">Редактор</string>
+    <string name="editor_name">Название модуля</string>
+    <string name="editor_code">Код (Lua)</string>
+    <string name="editor_permissions">Разрешения, которые модуль может запросить</string>
+    <string name="editor_permissions_hint">То, что использует код, включается автоматически. Разрешения вы всё равно подтверждаете при первом запуске модуля.</string>
+    <string name="editor_save_run">Сохранить и запустить</string>
+    <string name="editor_save">Сохранить</string>
+    <string name="editor_hint">Работающий модуль останавливается и запускается с новым кодом. Его файлы и выданные разрешения сохраняются.</string>
+    <string name="module_edit">Редактировать код</string>
+    <string name="import_button">Импортировать файл (.mfrg или .lua)</string>
+    <string name="import_hint">Пакет проверяется и показывается вам. Скрипт открывается в редакторе, где виден весь код до того, как он станет модулем.</string>
     <string name="import_rejected">Не установлено</string>
     <string name="import_title">Установить «%1$s»?</string>
     <string name="import_runtime">Среда выполнения: %1$s</string>

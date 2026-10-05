@@ -66,6 +66,11 @@ user sees the key's fingerprint and has to compare it with one obtained from the
 Updates are accepted only from the key that signed the installed version, and never to an
 older version.
 
+Modules written in the app's editor, or imported as a plain script, are unsigned. They are
+never installed silently: the script opens in the editor, where the user sees the code and
+saves it. They run in the same sandbox behind the same permissions, which are still asked
+for before the first start. An unsigned module and a signed one cannot replace each other.
+
 ## What the user sees
 
 - **Before installation:** signer fingerprint, the author's description, every permission

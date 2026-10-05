@@ -2,6 +2,18 @@ package dev.moduforge.host.ui.modules
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import dev.moduforge.core.authoring.ModuleTemplate
+import dev.moduforge.core.authoring.ModuleTemplates
+import dev.moduforge.host.ui.editor.EditorDrafts
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Button
@@ -51,6 +63,7 @@ import javax.inject.Inject
 @HiltViewModel
 class ModulesViewModel @Inject constructor(
     registry: ModuleRegistry,
+    private val drafts: EditorDrafts,
     private val installer: ModuleInstaller,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -60,9 +73,24 @@ class ModulesViewModel @Inject constructor(
     /** Verified package awaiting the user's decision, or null. */
     val review: StateFlow<PackageInspection.Ready?> = _review
 
-    /** Verifies a package the user picked; a valid one is put up for [review]. */
+    private val _sources = Channel<Unit>(Channel.BUFFERED)
+
+    /** Signals that a picked script was handed to the editor and the editor should open. */
+    val sources = _sources.receiveAsFlow()
+
+    /**
+     * Handles a file the user picked. A package is verified and put up for [review];
+     * anything else is taken as a script and opened in the editor, where the user sees
+     * the code before it becomes a module.
+     */
     fun inspect(uri: Uri) {
         viewModelScope.launch {
+            val script = withContext(Dispatchers.IO) { readScript(uri) }
+            if (script != null) {
+                drafts.offer(script)
+                _sources.send(Unit)
+                return@launch
+            }
             val result = installer.inspect {
                 context.contentResolver.openInputStream(uri) ?: throw IOException("cannot open $uri")
             }
@@ -71,6 +99,32 @@ class ModulesViewModel @Inject constructor(
                 is PackageInspection.Rejected -> _rejections.send(result.reason)
             }
         }
+    }
+
+    /** The file as an editor draft, or null when it is a package (ZIP), unreadable, too large or not text. */
+    private fun readScript(uri: Uri): EditorDrafts.Draft? = try {
+        val bytes = context.contentResolver.openInputStream(uri)?.use { input ->
+            val buffer = ByteArray(MAX_SCRIPT_BYTES + 1)
+            var size = 0
+            while (size < buffer.size) {
+                val read = input.read(buffer, size, buffer.size - size)
+                if (read < 0) break
+                size += read
+            }
+            buffer.copyOf(size)
+        }
+        val isPackage = bytes != null && bytes.size >= 2 && bytes[0] == 'P'.code.toByte() && bytes[1] == 'K'.code.toByte()
+        if (bytes == null || isPackage || bytes.size > MAX_SCRIPT_BYTES || bytes.any { it == 0.toByte() }) {
+            null
+        } else {
+            val fileName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+            EditorDrafts.Draft(fileName.orEmpty().substringBeforeLast('.'), bytes.decodeToString())
+        }
+    } catch (e: IOException) {
+        null
+    } catch (e: SecurityException) {
+        null
     }
 
     fun confirmImport() {
@@ -94,15 +148,35 @@ class ModulesViewModel @Inject constructor(
 
     /** Reasons of failed installations. */
     val rejections = _rejections.receiveAsFlow()
+
+    private companion object {
+        /** A script has to fit into module storage limits and the editor. */
+        const val MAX_SCRIPT_BYTES = 256 * 1024
+    }
 }
 
 @Composable
 fun ModulesScreen(
     onOpenModule: (String) -> Unit,
+    onOpenEditor: (template: String?) -> Unit,
     onMessage: suspend (String) -> Unit,
     viewModel: ModulesViewModel = hiltViewModel(),
 ) {
     val modules = viewModel.modules.collectAsStateWithLifecycle().value ?: return
+    var choosingTemplate by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.sources.collect { onOpenEditor(null) }
+    }
+    if (choosingTemplate) {
+        TemplateDialog(
+            onPick = { key ->
+                choosingTemplate = false
+                onOpenEditor(key)
+            },
+            onCancel = { choosingTemplate = false },
+        )
+    }
 
     val rejectedPrefix = stringResource(R.string.import_rejected)
     LaunchedEffect(viewModel, rejectedPrefix) {
@@ -135,9 +209,21 @@ fun ModulesScreen(
         items(modules, key = { it.id }) { module ->
             ModuleCard(module, onClick = { onOpenModule(module.id) })
         }
+        item(key = "create") {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Button(onClick = { choosingTemplate = true }) {
+                    Text(stringResource(R.string.create_button))
+                }
+                Text(
+                    stringResource(R.string.create_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         item(key = "import") {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Button(onClick = { picker.launch(arrayOf("*/*")) }) {
+                OutlinedButton(onClick = { picker.launch(arrayOf("*/*")) }) {
                     Text(stringResource(R.string.import_button))
                 }
                 Text(
@@ -149,6 +235,33 @@ fun ModulesScreen(
         }
     }
 }
+
+/** Lets the user choose what a new module starts from. */
+@Composable
+private fun TemplateDialog(onPick: (String) -> Unit, onCancel: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.create_title)) },
+        text = {
+            Column {
+                ModuleTemplates.ALL.forEach { template ->
+                    TextButton(onClick = { onPick(template.key) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(template.labelRes), modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.import_cancel)) } },
+    )
+}
+
+private val ModuleTemplate.labelRes: Int
+    get() = when (key) {
+        "telegram" -> R.string.template_telegram
+        "watcher" -> R.string.template_watcher
+        else -> R.string.template_empty
+    }
 
 @Composable
 private fun ModuleCard(module: ModuleRecord, onClick: () -> Unit) {

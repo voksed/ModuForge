@@ -52,6 +52,7 @@ import dev.moduforge.host.ui.labelRes
 import dev.moduforge.host.ui.titleRes
 import dev.moduforge.sandbox.ModuleInstaller
 import dev.moduforge.sdk.Capability
+import dev.moduforge.sdk.ModuleRuntimeKind
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -160,13 +161,22 @@ class ModuleDetailViewModel @Inject constructor(
         }
     }
 
+    init {
+        // Arriving from the editor's "save and run": continue with the start the user asked for.
+        if (savedStateHandle.get<Boolean>(ARG_START) == true) {
+            savedStateHandle[ARG_START] = false
+            start()
+        }
+    }
+
     companion object {
         const val ARG_MODULE_ID = "moduleId"
+        const val ARG_START = "start"
     }
 }
 
 @Composable
-fun ModuleDetailScreen(onGone: () -> Unit, viewModel: ModuleDetailViewModel = hiltViewModel()) {
+fun ModuleDetailScreen(onGone: () -> Unit, onEdit: (String) -> Unit, viewModel: ModuleDetailViewModel = hiltViewModel()) {
     val state = viewModel.state.collectAsStateWithLifecycle().value ?: return
     val module = state.module
 
@@ -189,6 +199,11 @@ fun ModuleDetailScreen(onGone: () -> Unit, viewModel: ModuleDetailViewModel = hi
 
         item(key = "run") {
             RunControls(module.state, state.busy, viewModel::start, viewModel::stop, viewModel::kill)
+        }
+        if (module.signer == null && module.manifest.runtime == ModuleRuntimeKind.LUA) {
+            item(key = "edit") {
+                OutlinedButton(onClick = { onEdit(module.id) }) { Text(stringResource(R.string.module_edit)) }
+            }
         }
         if (Capability.BACKGROUND_EXECUTION in module.manifest.permissions) {
             item(key = "autostart") { AutoStartSwitch(module.autoStart, viewModel::setAutoStart) }
@@ -359,4 +374,4 @@ private fun LogCard(lines: List<ModuleLogLine>) {
     }
 }
 
-private const val VISIBLE_LOG_LINES = 40
+private const val VISIBLE_LOG_LINES = 100

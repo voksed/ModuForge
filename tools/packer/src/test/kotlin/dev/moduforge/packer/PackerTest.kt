@@ -1,5 +1,6 @@
 package dev.moduforge.packer
 
+import dev.moduforge.core.authoring.ModuleTemplates
 import dev.moduforge.core.pkg.ModulePackageVerifier
 import dev.moduforge.core.pkg.PackageCheck
 import org.junit.Assert.assertEquals
@@ -67,7 +68,7 @@ class PackerTest {
     @Test
     fun `wizard creates a project that packs as it is`() {
         val key = key()
-        TEMPLATES.forEachIndexed { index, template ->
+        ModuleTemplates.ALL.forEachIndexed { index, template ->
             val dir = File(temp.root, "wizard-${template.key}")
             val report = run(
                 listOf("new", dir.path),

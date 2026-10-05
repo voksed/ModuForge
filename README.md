@@ -10,7 +10,7 @@ in its own sandbox. A module can do only what you allowed, and everything it doe
 network is written to a log you can read. The app does nothing on its own: every feature
 is a module.
 
-Version 0.1.0. Android 8.0 or newer.
+Version 0.1.1. Android 8.0 or newer.
 
 ```lua
 -- A complete Telegram bot. The token is asked for on the first start.
@@ -29,8 +29,10 @@ bot:run()
 - **Signed packages.** Modules come as `.mfrg` files. Before installing you see who
   signed the package, what it says about itself and everything it can ever ask for.
 - **Audit log.** Every installation, start, permission decision and network connection.
-- **For authors.** A project wizard, a packer and Lua libraries for Telegram bots,
-  settings and schedules. Compiled Kotlin modules can show their own UI.
+- **Write a module on the phone.** Create module → pick a starting point → edit → run.
+  No computer, manifest or signature; permissions are worked out from the code.
+- **For authors.** A project wizard, a packer for distribution and Lua libraries for
+  Telegram bots, settings and schedules. Compiled Kotlin modules can show their own UI.
 - **Themes.** Light, dark, wallpaper or custom colours, palettes, corner shapes, text size.
 
 Not there yet: JavaScript and Python runtimes, a module catalogue, a Google Play release

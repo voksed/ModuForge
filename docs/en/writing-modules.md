@@ -6,7 +6,34 @@ into one signed file, `.mfrg`, which users import in the app.
 This page covers script modules in Lua. For compiled modules see
 [Kotlin modules](kotlin-modules.md).
 
-## Quick start
+## The simplest way: write the module in the app
+
+A module of your own needs no computer, no packer, no manifest and no signature.
+
+1. In the app, on the **Modules** tab, press **Create module** and pick a starting point:
+   Telegram bot, page watcher or empty script.
+2. Name the module and edit the code in the built-in editor.
+3. Press **Save and run**. Confirm the permissions on the first start.
+
+What the app does for you:
+
+- **Permissions are worked out from the code.** Using `mf.http` declares internet access,
+  `mf.storage` or `mf.config` storage, `mf.notify` notifications. Background work is
+  switched on by you in the editor.
+- **The version goes up on every save**; the module's files and granted permissions are
+  kept.
+- **A running module is restarted** with the new code.
+
+To get back to the code, open the module and press **Edit code**.
+
+A ready `.lua` file can be imported with the same button as a package: it opens in the
+editor, where the whole code is visible, and becomes a module when you save.
+
+Such a module is one script and exists only on your phone. To give a module to other
+people, or to build one from several files, you need a signed package — the rest of this
+page.
+
+## A package for distribution: quick start
 
 You need Java 17 or newer and this repository.
 

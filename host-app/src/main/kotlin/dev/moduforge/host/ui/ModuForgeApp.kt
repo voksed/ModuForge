@@ -42,6 +42,8 @@ import dev.moduforge.host.R
 import dev.moduforge.host.consent.ConsentCoordinator
 import dev.moduforge.host.consent.InputCoordinator
 import dev.moduforge.host.ui.consent.InputDialog
+import dev.moduforge.host.ui.editor.EditorScreen
+import dev.moduforge.host.ui.editor.EditorViewModel
 import dev.moduforge.host.ui.theme.LocalAppearance
 import dev.moduforge.host.ui.audit.AuditScreen
 import dev.moduforge.host.ui.consent.ConsentDialog
@@ -64,7 +66,18 @@ private fun NotificationPermission(wantsNotifications: StateFlow<Boolean>) {
 private const val ROUTE_MODULES = "modules"
 private const val ROUTE_AUDIT = "audit"
 private const val ROUTE_SETTINGS = "settings"
-private const val ROUTE_MODULE = "module/{${ModuleDetailViewModel.ARG_MODULE_ID}}"
+private const val ROUTE_MODULE =
+    "module/{${ModuleDetailViewModel.ARG_MODULE_ID}}?start={${ModuleDetailViewModel.ARG_START}}"
+private const val ROUTE_EDITOR =
+    "editor?moduleId={${EditorViewModel.ARG_MODULE_ID}}&template={${EditorViewModel.ARG_TEMPLATE}}"
+
+private fun moduleRoute(id: String, start: Boolean = false) = "module/${Uri.encode(id)}?start=$start"
+
+private fun editorRoute(moduleId: String? = null, template: String? = null) = buildString {
+    append("editor")
+    if (moduleId != null) append("?moduleId=").append(Uri.encode(moduleId))
+    if (template != null) append("?template=").append(Uri.encode(template))
+}
 
 private data class TopLevel(val route: String, @StringRes val labelRes: Int, val icon: ImageVector)
 
@@ -87,7 +100,10 @@ fun ModuForgeApp(consent: ConsentCoordinator, input: InputCoordinator, wantsNoti
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(current?.labelRes ?: R.string.module_title)) },
+                title = {
+                    val title = current?.labelRes ?: if (route == ROUTE_EDITOR) R.string.editor_title else R.string.module_title
+                    Text(stringResource(title))
+                },
                 navigationIcon = {
                     if (current == null && route != null) {
                         IconButton(onClick = { navController.popBackStack() }) {
@@ -129,15 +145,47 @@ fun ModuForgeApp(consent: ConsentCoordinator, input: InputCoordinator, wantsNoti
         NavHost(navController, startDestination = ROUTE_MODULES, modifier = Modifier.padding(padding)) {
             composable(ROUTE_MODULES) {
                 ModulesScreen(
-                    onOpenModule = { id -> navController.navigate("module/${Uri.encode(id)}") },
+                    onOpenModule = { id -> navController.navigate(moduleRoute(id)) },
+                    onOpenEditor = { template -> navController.navigate(editorRoute(template = template)) },
                     onMessage = { snackbar.showSnackbar(it) },
                 )
             }
             composable(
                 ROUTE_MODULE,
-                arguments = listOf(navArgument(ModuleDetailViewModel.ARG_MODULE_ID) { type = NavType.StringType }),
+                arguments = listOf(
+                    navArgument(ModuleDetailViewModel.ARG_MODULE_ID) { type = NavType.StringType },
+                    navArgument(ModuleDetailViewModel.ARG_START) {
+                        type = NavType.BoolType
+                        defaultValue = false
+                    },
+                ),
             ) {
-                ModuleDetailScreen(onGone = { navController.popBackStack(ROUTE_MODULES, inclusive = false) })
+                ModuleDetailScreen(
+                    onGone = { navController.popBackStack(ROUTE_MODULES, inclusive = false) },
+                    onEdit = { id -> navController.navigate(editorRoute(moduleId = id)) },
+                )
+            }
+            composable(
+                ROUTE_EDITOR,
+                arguments = listOf(
+                    navArgument(EditorViewModel.ARG_MODULE_ID) {
+                        type = NavType.StringType
+                        nullable = true
+                    },
+                    navArgument(EditorViewModel.ARG_TEMPLATE) {
+                        type = NavType.StringType
+                        nullable = true
+                    },
+                ),
+            ) {
+                EditorScreen(
+                    onSaved = { saved ->
+                        // Back to the list, then to the module, so that "back" from it leads to the list.
+                        navController.navigate(moduleRoute(saved.moduleId, saved.startRequested)) {
+                            popUpTo(ROUTE_MODULES)
+                        }
+                    },
+                )
             }
             composable(ROUTE_AUDIT) { AuditScreen() }
             composable(ROUTE_SETTINGS) { SettingsScreen() }

@@ -73,12 +73,14 @@ class ModuleManager(
 
     /**
      * Replaces an installed module with another version of itself. Allowed only for a module that
-     * is not running, with a package signed by the same key and a version that is not older.
+     * is not running, from the same origin — the same signing key, or unsigned code replacing an
+     * unsigned module written on this device — and with a version that is not older.
      * State and grants are kept; grants for capabilities the new manifest dropped are removed.
      *
+     * @param signer key of the new package; null for unsigned code written on this device.
      * @param replacePackage swaps the stored package; called once every check has passed.
      */
-    suspend fun update(manifestJson: String, signer: String, replacePackage: suspend () -> Boolean): InstallResult = mutex.withLock {
+    suspend fun update(manifestJson: String, signer: String?, replacePackage: suspend () -> Boolean): InstallResult = mutex.withLock {
         val manifest = when (val parsed = ModuleManifests.parse(manifestJson)) {
             is ManifestResult.Valid -> parsed.manifest
             is ManifestResult.Invalid -> return reject(UNPARSED_MODULE_ID, parsed.problems)
@@ -86,7 +88,8 @@ class ModuleManager(
         val existing = registry.find(manifest.id)
             ?: return reject(manifest.id, listOf("module ${manifest.id} is not installed"))
         val problem = when {
-            existing.signer == null -> "a module bundled with the host cannot be replaced from a file"
+            existing.signer == null && signer != null -> "a module written on this device cannot be replaced by a package"
+            existing.signer != null && signer == null -> "a signed module cannot be replaced by unsigned code"
             existing.signer != signer -> "the package is signed by a different key than the installed module"
             existing.state == ModuleState.RUNNING -> "stop the module before updating it"
             !ModuleManifests.supportsSdk(manifest, hostSdkVersion) -> "requires SDK ${manifest.sdkRange}, host provides $hostSdkVersion"
@@ -252,6 +255,6 @@ class ModuleManager(
         /** Audit placeholder for packages whose manifest could not be read. */
         const val UNPARSED_MODULE_ID = "(unparsed)"
 
-        const val ORIGIN_BUNDLED = "bundled with the host"
+        const val ORIGIN_BUNDLED = "unsigned, written on this device"
     }
 }

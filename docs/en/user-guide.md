@@ -17,6 +17,19 @@ A module comes as a file with the `.mfrg` extension.
 Installing grants nothing and runs nothing. A package that was altered after signing, or
 is not signed at all, is refused before this screen appears.
 
+## A module of your own, without a computer
+
+**Create module** opens an editor: pick a starting point, name the module, edit the code
+and press **Save and run**. Details are in [Writing modules](writing-modules.md).
+
+A `.lua` file is imported with the same button as a package. It is not installed right
+away; it opens in the editor, so you see the code and decide whether to save it as a
+module.
+
+Modules written on the phone carry no signature — you are their author. Their screen has
+an **Edit code** button. Such a module cannot be replaced by a package from a file, and a
+signed module cannot be replaced by unsigned code.
+
 ## Running a module
 
 Open the module from the list.

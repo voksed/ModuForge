@@ -1,5 +1,6 @@
 package dev.moduforge.sandbox
 
+import dev.moduforge.core.authoring.LocalModules
 import dev.moduforge.core.module.InstallResult
 import dev.moduforge.core.module.ModuleManager
 import dev.moduforge.core.module.ModuleRegistry
@@ -56,6 +57,15 @@ class ModulePackageStore(private val root: File) {
         target.parentFile?.mkdirs()
         target.delete()
         return staged.file.renameTo(target) && target.setReadOnly()
+    }
+
+    /** Content of one entry of an installed package; null when the package or the entry is missing. */
+    fun readEntry(moduleId: String, name: String): ByteArray? = try {
+        ZipFile(packageFile(moduleId)).use { zip ->
+            zip.getEntry(name)?.let { entry -> zip.getInputStream(entry).use { it.readBytes() } }
+        }
+    } catch (e: IOException) {
+        null
     }
 
     fun discard(staged: Staged) {
@@ -123,7 +133,7 @@ class ModuleInstaller(
                 val installed = registry.find(check.manifest.id)
                 val conflict = when {
                     installed == null -> null
-                    installed.signer == null -> "a module bundled with the host cannot be replaced from a file"
+                    installed.signer == null -> "a module written on this device cannot be replaced by a package"
                     installed.signer != check.signer -> "the package is signed by a different key than the installed module"
                     else -> null
                 }
@@ -168,6 +178,27 @@ class ModuleInstaller(
             return@withContext manager.install(manifestJson.orEmpty())
         }
         place(staged, manifest, manifestJson, signer = null)
+    }
+
+    /**
+     * Saves a module written on this device: installs it, or replaces the code of the unsigned
+     * module with the same id. The module must not be running.
+     */
+    suspend fun saveLocal(manifest: ModuleManifest, source: String): InstallResult = withContext(Dispatchers.IO) {
+        val manifestJson = ModuleManifests.encode(manifest)
+        val staged = store.stage(LocalModules.pack(manifest, source).inputStream())
+            ?: return@withContext InstallResult.Rejected(listOf("module could not be stored"))
+        if (registry.find(manifest.id) == null) {
+            return@withContext place(staged, manifest, manifestJson, signer = null)
+        }
+        val result = manager.update(manifestJson, signer = null) { store.commit(staged, manifest.id) }
+        if (result is InstallResult.Rejected) store.discard(staged)
+        result
+    }
+
+    /** Script of a module written on this device; null when the module has no such script. */
+    suspend fun readLocalSource(moduleId: String): String? = withContext(Dispatchers.IO) {
+        store.readEntry(moduleId, ModulePackageFormat.CODE_PREFIX + LocalModules.ENTRY)?.decodeToString()
     }
 
     suspend fun uninstall(moduleId: String): Boolean {

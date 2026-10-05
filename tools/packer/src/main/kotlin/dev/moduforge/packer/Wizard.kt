@@ -1,94 +1,12 @@
 package dev.moduforge.packer
 
+import dev.moduforge.core.authoring.ModuleTemplates
 import dev.moduforge.core.pkg.ModulePackageFormat
-import dev.moduforge.sdk.Capability
 import dev.moduforge.sdk.ManifestResult
 import dev.moduforge.sdk.ModuleManifest
 import dev.moduforge.sdk.ModuleManifests
 import dev.moduforge.sdk.ModuleRuntimeKind
 import java.io.File
-
-/** Starting point of a new module: what it is for, what it needs and its first script. */
-internal class Template(
-    val key: String,
-    val title: String,
-    val permissions: Map<Capability, String>,
-    val script: String,
-)
-
-internal val TEMPLATES = listOf(
-    Template(
-        key = "telegram",
-        title = "Telegram bot",
-        permissions = linkedMapOf(
-            Capability.NETWORK_OUTBOUND to "Talks to api.telegram.org.",
-            Capability.FILE_SANDBOXED to "Keeps the bot token and its place in the message queue.",
-            Capability.BACKGROUND_EXECUTION to "Keeps answering while the app is not on screen.",
-        ),
-        script = """
-            -- Telegram bot. The token is asked for on the first start and kept in module storage.
-            local telegram = require("mf.telegram")
-
-            local bot = assert(telegram.bot())
-
-            bot:command("start", function(message)
-                bot:reply(message, "Hello! Send me any text.")
-            end)
-
-            bot:on("text", function(message)
-                bot:reply(message, message.text)
-            end)
-
-            local _, reason = bot:run()
-            mf.log("bot stopped: " .. tostring(reason))
-        """,
-    ),
-    Template(
-        key = "watcher",
-        title = "Watcher: checks a web page on a schedule and notifies about changes",
-        permissions = linkedMapOf(
-            Capability.NETWORK_OUTBOUND to "Downloads the watched page.",
-            Capability.FILE_SANDBOXED to "Remembers the address and the last seen content.",
-            Capability.NOTIFICATIONS to "Tells you when the page changes.",
-            Capability.BACKGROUND_EXECUTION to "Keeps checking while the app is not on screen.",
-        ),
-        script = """
-            -- Checks a page every few minutes and notifies when its content changes.
-            local config = require("mf.config")
-            local schedule = require("mf.schedule")
-
-            local url = config.get("url", { ask = "Address of the page to watch (https://...)" })
-            if not url then
-                mf.log("nothing to watch")
-                return
-            end
-
-            schedule.every(300, function()
-                local response, err = mf.http{ url = url }
-                if not response then
-                    mf.log("check failed: " .. tostring(err))
-                    return
-                end
-                local previous = config.get("last")
-                if previous and previous ~= response.body then
-                    mf.notify("Page changed", url)
-                end
-                config.set("last", response.body)
-            end)
-
-            schedule.run()
-        """,
-    ),
-    Template(
-        key = "empty",
-        title = "Empty script",
-        permissions = emptyMap(),
-        script = """
-            -- Runs from top to bottom when the module starts. The API is described in docs/en/lua-api.md.
-            mf.log("hello from " .. mf.name)
-        """,
-    ),
-)
 
 /**
  * Asks the author a few questions and writes a ready-to-pack module project.
@@ -105,9 +23,9 @@ internal fun createProject(target: File?, ask: (question: String, default: Strin
     val author = answer("Author", System.getProperty("user.name").orEmpty())
     val description = answer("What does it do (one sentence)", "")
 
-    val menu = TEMPLATES.mapIndexed { index, template -> "  ${index + 1}. ${template.title}" }.joinToString("\n")
+    val menu = ModuleTemplates.ALL.mapIndexed { index, template -> "  ${index + 1}. ${template.title}" }.joinToString("\n")
     val choice = answer("What to start from\n$menu\nNumber", "1").toIntOrNull()
-    val template = TEMPLATES.getOrNull((choice ?: 0) - 1) ?: throw UsageError("choose a number from 1 to ${TEMPLATES.size}")
+    val template = ModuleTemplates.ALL.getOrNull((choice ?: 0) - 1) ?: throw UsageError("choose a number from 1 to ${ModuleTemplates.ALL.size}")
 
     val manifest = ModuleManifest(
         id = id,

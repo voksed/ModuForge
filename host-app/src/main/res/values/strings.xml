@@ -12,8 +12,23 @@
     <string name="modules_permissions_count">Permissions declared: %1$d</string>
 
 
-    <string name="import_button">Import module (.mfrg)</string>
-    <string name="import_hint">The package is verified and shown for review first. Nothing runs until you install and enable it.</string>
+    <string name="create_button">Create module</string>
+    <string name="create_hint">Write a script right here: pick a starting point, edit, run. No computer needed.</string>
+    <string name="create_title">Start from</string>
+    <string name="template_telegram">Telegram bot</string>
+    <string name="template_watcher">Page watcher with notifications</string>
+    <string name="template_empty">Empty script</string>
+    <string name="editor_title">Editor</string>
+    <string name="editor_name">Module name</string>
+    <string name="editor_code">Code (Lua)</string>
+    <string name="editor_permissions">Permissions the module may ask for</string>
+    <string name="editor_permissions_hint">What the code uses is switched on automatically. You still confirm permissions when the module first starts.</string>
+    <string name="editor_save_run">Save and run</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_hint">A running module is stopped and restarted with the new code. Its files and granted permissions are kept.</string>
+    <string name="module_edit">Edit code</string>
+    <string name="import_button">Import file (.mfrg or .lua)</string>
+    <string name="import_hint">A package is verified and shown for review. A script opens in the editor, where you see the code before it becomes a module.</string>
     <string name="import_rejected">Not installed</string>
     <string name="import_title">Install “%1$s”?</string>
     <string name="import_runtime">Runtime: %1$s</string>
