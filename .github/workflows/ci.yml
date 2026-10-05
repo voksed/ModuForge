@@ -10,26 +10,26 @@ permissions:
 
 jobs:
   build:
+    # The runner image ships the Android SDK with licences accepted; the Android Gradle
+    # plugin downloads the platform and build tools the project asks for.
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: android-actions/setup-android@v3
-
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # Unit tests, lint and both APKs. Device tests need a phone and are run locally.
       - name: Build
         run: ./gradlew build --console=plain
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: host-app-debug
           path: host-app/build/outputs/apk/debug/host-app-debug.apk
@@ -37,9 +37,10 @@ jobs:
 
       - name: Upload test reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reports
+          if-no-files-found: ignore
           path: |
             **/build/reports/
             **/build/test-results/
