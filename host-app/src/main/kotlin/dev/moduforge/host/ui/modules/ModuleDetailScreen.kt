@@ -185,7 +185,11 @@ class ModuleDetailViewModel @Inject constructor(
 }
 
 @Composable
-fun ModuleDetailScreen(onGone: () -> Unit, onEdit: (String) -> Unit, viewModel: ModuleDetailViewModel = hiltViewModel()) {
+fun ModuleDetailScreen(
+    onGone: () -> Unit,
+    onEdit: (moduleId: String, file: String?, line: Int?) -> Unit,
+    viewModel: ModuleDetailViewModel = hiltViewModel(),
+) {
     val state = viewModel.state.collectAsStateWithLifecycle().value ?: return
     val module = state.module
 
@@ -211,7 +215,15 @@ fun ModuleDetailScreen(onGone: () -> Unit, onEdit: (String) -> Unit, viewModel: 
         }
         if (module.signer == null && module.manifest.runtime == ModuleRuntimeKind.LUA) {
             item(key = "edit") {
-                OutlinedButton(onClick = { onEdit(module.id) }) { Text(stringResource(R.string.module_edit)) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { onEdit(module.id, null, null) }) { Text(stringResource(R.string.module_edit)) }
+                    // The newest error that names a place in the code leads straight to that line.
+                    errorLocation(state.log)?.let { (file, line) ->
+                        OutlinedButton(onClick = { onEdit(module.id, file, line) }) {
+                            Text(stringResource(R.string.module_open_error, file, line))
+                        }
+                    }
+                }
             }
         }
         if (Capability.BACKGROUND_EXECUTION in module.manifest.permissions) {
@@ -403,3 +415,12 @@ private fun LogCard(lines: List<ModuleLogLine>, onShare: () -> Unit, onClear: ()
 }
 
 private const val VISIBLE_LOG_LINES = 100
+
+private val SOURCE_LOCATION = Regex("""([\w./@+-]+\.(?:lua|js)):(\d+)""")
+
+/** File and line named by the most recent error in the output, when the last run ended with one. */
+internal fun errorLocation(log: List<ModuleLogLine>): Pair<String, Int>? {
+    val lastError = log.lastOrNull { it.level == ModuleLogSink.Level.ERROR } ?: return null
+    val match = SOURCE_LOCATION.find(lastError.message) ?: return null
+    return match.groupValues[1].removePrefix("@") to match.groupValues[2].toInt()
+}

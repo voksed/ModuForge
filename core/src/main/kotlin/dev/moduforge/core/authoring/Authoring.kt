@@ -257,13 +257,24 @@ object LocalModules {
         )
     }
 
-    /** Unsigned package of a single-script module, in the layout the sandbox reads. */
-    fun pack(manifest: ModuleManifest, source: String): ByteArray {
+    /** True when [name] can be a source file of a local module written in [runtime]. */
+    fun isSourceFileName(name: String, runtime: ModuleRuntimeKind): Boolean =
+        ModuleManifests.isRelativePath(name) && runtimeForFile(name) == runtime
+
+    /** Unsigned package of a single-script module. */
+    fun pack(manifest: ModuleManifest, source: String): ByteArray = pack(manifest, mapOf(manifest.entry to source))
+
+    /**
+     * Unsigned package in the layout the sandbox reads.
+     *
+     * @param files sources by path relative to the module root; must contain the manifest's entry.
+     */
+    fun pack(manifest: ModuleManifest, files: Map<String, String>): ByteArray {
+        require(manifest.entry in files) { "entry script ${manifest.entry} is missing" }
         val output = ByteArrayOutputStream()
         ZipOutputStream(output).use { zip ->
-            mapOf(
-                ModulePackageFormat.MANIFEST to ModuleManifests.encode(manifest).toByteArray(),
-                ModulePackageFormat.CODE_PREFIX + manifest.entry to source.toByteArray(),
+            (mapOf(ModulePackageFormat.MANIFEST to ModuleManifests.encode(manifest).toByteArray()) +
+                files.map { (path, source) -> ModulePackageFormat.CODE_PREFIX + path to source.toByteArray() }
             ).forEach { (name, bytes) ->
                 zip.putNextEntry(ZipEntry(name))
                 zip.write(bytes)

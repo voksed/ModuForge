@@ -23,6 +23,12 @@
     <string name="editor_permissions_hint">То, что использует код, включается автоматически. Разрешения вы всё равно подтверждаете при первом запуске модуля.</string>
     <string name="editor_save_run">Сохранить и запустить</string>
     <string name="editor_save">Сохранить</string>
+    <string name="editor_add_file">Добавить файл</string>
+    <string name="editor_file_name">Имя файла (.%1$s)</string>
+    <string name="editor_file_hint">Другие файлы модуля, подключаются из главного скрипта через require. Можно с папками: lib/util.%1$s</string>
+    <string name="editor_file_invalid">Только латинские буквы, цифры и _ . - с расширением .%1$s, и имя не должно быть занято.</string>
+    <string name="editor_delete_file">Удалить %1$s</string>
+    <string name="module_open_error">Открыть %1$s, строка %2$d</string>
     <string name="editor_hint">Работающий модуль останавливается и запускается с новым кодом. Его файлы и выданные разрешения сохраняются.</string>
     <string name="module_edit">Редактировать код</string>
     <string name="import_button">Импортировать файл (.mfrg, .lua или .js)</string>

@@ -68,6 +68,17 @@ class ModulePackageStore(private val root: File) {
         null
     }
 
+    /** Entries of an installed package under [prefix], keyed by their path without the prefix. */
+    fun readEntries(moduleId: String, prefix: String): Map<String, ByteArray> = try {
+        ZipFile(packageFile(moduleId)).use { zip ->
+            zip.entries().asSequence()
+                .filter { !it.isDirectory && it.name.startsWith(prefix) }
+                .associate { entry -> entry.name.removePrefix(prefix) to zip.getInputStream(entry).use { it.readBytes() } }
+        }
+    } catch (e: IOException) {
+        emptyMap()
+    }
+
     fun discard(staged: Staged) {
         staged.file.delete()
     }
@@ -184,9 +195,13 @@ class ModuleInstaller(
      * Saves a module written on this device: installs it, or replaces the code of the unsigned
      * module with the same id. The module must not be running.
      */
-    suspend fun saveLocal(manifest: ModuleManifest, source: String): InstallResult = withContext(Dispatchers.IO) {
+    suspend fun saveLocal(manifest: ModuleManifest, source: String): InstallResult =
+        saveLocal(manifest, mapOf(manifest.entry to source))
+
+    /** @param files sources by path relative to the module root; must contain the manifest's entry. */
+    suspend fun saveLocal(manifest: ModuleManifest, files: Map<String, String>): InstallResult = withContext(Dispatchers.IO) {
         val manifestJson = ModuleManifests.encode(manifest)
-        val staged = store.stage(LocalModules.pack(manifest, source).inputStream())
+        val staged = store.stage(LocalModules.pack(manifest, files).inputStream())
             ?: return@withContext InstallResult.Rejected(listOf("module could not be stored"))
         if (registry.find(manifest.id) == null) {
             return@withContext place(staged, manifest, manifestJson, signer = null)
@@ -194,6 +209,11 @@ class ModuleInstaller(
         val result = manager.update(manifestJson, signer = null) { store.commit(staged, manifest.id) }
         if (result is InstallResult.Rejected) store.discard(staged)
         result
+    }
+
+    /** Every source file of a module written on this device, by path relative to the module root. */
+    suspend fun readLocalFiles(moduleId: String): Map<String, String> = withContext(Dispatchers.IO) {
+        store.readEntries(moduleId, ModulePackageFormat.CODE_PREFIX).mapValues { it.value.decodeToString() }
     }
 
     /** Script of a module written on this device; null when the module has no such script. */

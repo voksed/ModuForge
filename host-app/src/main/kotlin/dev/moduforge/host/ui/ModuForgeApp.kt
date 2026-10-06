@@ -69,14 +69,19 @@ private const val ROUTE_SETTINGS = "settings"
 private const val ROUTE_MODULE =
     "module/{${ModuleDetailViewModel.ARG_MODULE_ID}}?start={${ModuleDetailViewModel.ARG_START}}"
 private const val ROUTE_EDITOR =
-    "editor?moduleId={${EditorViewModel.ARG_MODULE_ID}}&template={${EditorViewModel.ARG_TEMPLATE}}"
+    "editor?moduleId={${EditorViewModel.ARG_MODULE_ID}}&template={${EditorViewModel.ARG_TEMPLATE}}" +
+        "&file={${EditorViewModel.ARG_FILE}}&line={${EditorViewModel.ARG_LINE}}"
 
 private fun moduleRoute(id: String, start: Boolean = false) = "module/${Uri.encode(id)}?start=$start"
 
-private fun editorRoute(moduleId: String? = null, template: String? = null) = buildString {
-    append("editor")
-    if (moduleId != null) append("?moduleId=").append(Uri.encode(moduleId))
-    if (template != null) append("?template=").append(Uri.encode(template))
+private fun editorRoute(moduleId: String? = null, template: String? = null, file: String? = null, line: Int? = null): String {
+    val arguments = listOfNotNull(
+        moduleId?.let { "moduleId=" + Uri.encode(it) },
+        template?.let { "template=" + Uri.encode(it) },
+        file?.let { "file=" + Uri.encode(it) },
+        line?.let { "line=$it" },
+    )
+    return if (arguments.isEmpty()) "editor" else "editor?" + arguments.joinToString("&")
 }
 
 private data class TopLevel(val route: String, @StringRes val labelRes: Int, val icon: ImageVector)
@@ -162,7 +167,7 @@ fun ModuForgeApp(consent: ConsentCoordinator, input: InputCoordinator, wantsNoti
             ) {
                 ModuleDetailScreen(
                     onGone = { navController.popBackStack(ROUTE_MODULES, inclusive = false) },
-                    onEdit = { id -> navController.navigate(editorRoute(moduleId = id)) },
+                    onEdit = { id, file, line -> navController.navigate(editorRoute(moduleId = id, file = file, line = line)) },
                 )
             }
             composable(
@@ -175,6 +180,14 @@ fun ModuForgeApp(consent: ConsentCoordinator, input: InputCoordinator, wantsNoti
                     navArgument(EditorViewModel.ARG_TEMPLATE) {
                         type = NavType.StringType
                         nullable = true
+                    },
+                    navArgument(EditorViewModel.ARG_FILE) {
+                        type = NavType.StringType
+                        nullable = true
+                    },
+                    navArgument(EditorViewModel.ARG_LINE) {
+                        type = NavType.IntType
+                        defaultValue = 0
                     },
                 ),
             ) {
