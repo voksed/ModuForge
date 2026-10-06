@@ -35,6 +35,25 @@ class LuaLibrariesTest {
     }
 
     @Test
+    fun `config describes the values the user can change, in the order they are used`() {
+        val host = run(
+            """
+            local config = require("mf.config")
+            config.get("token", { ask = "Token?", secret = true })
+            config.get("interval", { label = "Seconds between checks", default = 300 })
+            config.get("internal", { default = 1 })
+            config.get("temporary", { ask = "Code?", save = false })
+            config.get("token", { ask = "Token?", secret = true })
+            """,
+            "t", "c",
+        )
+        val described = host.files.getValue("config.meta.json").decodeToString()
+        assertTrue(described, "\"token\":{" in described && "\"interval\":{" in described && "Seconds between checks" in described)
+        assertTrue(described, "\"_order\":[\"token\",\"interval\"]" in described)
+        assertTrue(described, "internal" !in described && "temporary" !in described)
+    }
+
+    @Test
     fun `config survives a restart through storage`() {
         val host = run(
             """mf.log("token=" .. require("mf.config").get("token", { ask = "Token?" }))""",

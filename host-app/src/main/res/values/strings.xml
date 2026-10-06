@@ -37,6 +37,11 @@
     <string name="module_open_error">Open %1$s, line %2$d</string>
     <string name="editor_hint">A running module is stopped and restarted with the new code. Its files and granted permissions are kept.</string>
     <string name="module_edit">Edit code</string>
+    <string name="module_settings_header">Settings</string>
+    <string name="module_settings_hint">A running module is restarted to pick a change up.</string>
+    <string name="module_setting_unset">Not set</string>
+    <string name="module_setting_change">Change</string>
+    <string name="module_setting_empty_hint">Leave empty to remove the value: the module will ask for it again or use its default.</string>
     <string name="import_button">Import file (.mfrg, .lua or .js)</string>
     <string name="import_hint">A package is verified and shown for review. A script opens in the editor, where you see the code before it becomes a module.</string>
     <string name="import_rejected">Not installed</string>

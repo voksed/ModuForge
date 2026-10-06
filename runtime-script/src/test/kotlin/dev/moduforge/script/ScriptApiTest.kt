@@ -462,5 +462,6 @@ class ScriptApiTest {
         assertEquals(listOf("42 true other", "Baku Baku 5", "null", "module 'missing' not found"), host.output)
         val stored = host.files.getValue("config.json").decodeToString()
         assertTrue(stored, "\"city\":\"Baku\"" in stored && "limit" !in stored)
+        assertEquals("""{"city":{"label":"City?","secret":false}}""", host.files.getValue("config.meta.json").decodeToString())
     }
 }

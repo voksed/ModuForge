@@ -34,6 +34,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.moduforge.core.authoring.LocalModules
+import dev.moduforge.core.authoring.ModuleSetting
+import dev.moduforge.core.authoring.ModuleSettings
 import dev.moduforge.core.module.ModuleLogSink
 import dev.moduforge.core.module.ModuleManager
 import dev.moduforge.core.module.ModuleRecord
@@ -53,14 +56,21 @@ import dev.moduforge.host.ui.descriptionRes
 import dev.moduforge.host.ui.labelRes
 import dev.moduforge.host.ui.titleRes
 import dev.moduforge.sandbox.ModuleInstaller
+import dev.moduforge.sandbox.ModuleStorage
 import dev.moduforge.sdk.Capability
 import dev.moduforge.sdk.ModuleRuntimeKind
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -78,7 +88,7 @@ data class ModuleDetailState(
 @HiltViewModel
 class ModuleDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    registry: ModuleRegistry,
+    private val registry: ModuleRegistry,
     grants: GrantStore,
     private val logs: ModuleLogs,
     uiStore: ModuleUiStore,
@@ -86,6 +96,7 @@ class ModuleDetailViewModel @Inject constructor(
     private val manager: ModuleManager,
     private val installer: ModuleInstaller,
     private val broker: PermissionBroker,
+    private val storage: ModuleStorage,
 ) : ViewModel() {
 
     private val moduleId: String = checkNotNull(savedStateHandle[ARG_MODULE_ID])
@@ -155,6 +166,39 @@ class ModuleDetailViewModel @Inject constructor(
 
     fun onUiEvent(event: UiEvent) = runtime.sendUiEvent(moduleId, event)
 
+    private val _settings = MutableStateFlow<List<ModuleSetting>>(emptyList())
+
+    /** Values the module described through its `config` library. */
+    val settings: StateFlow<List<ModuleSetting>> = _settings
+
+    private suspend fun loadSettings() {
+        _settings.value = withContext(Dispatchers.IO) {
+            runCatching {
+                ModuleSettings.list(
+                    storage.read(moduleId, ModuleSettings.VALUES_FILE)?.decodeToString(),
+                    storage.read(moduleId, ModuleSettings.DESCRIPTIONS_FILE)?.decodeToString(),
+                )
+            }.getOrDefault(emptyList())
+        }
+    }
+
+    /**
+     * Stores a new value of a setting. A running module is stopped first and started again
+     * afterwards: it holds its settings in memory and would otherwise write the old ones back.
+     */
+    fun changeSetting(key: String, value: String) = lifecycle {
+        val wasRunning = state.value?.module?.state == ModuleState.RUNNING
+        if (wasRunning) manager.stop(moduleId)
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val current = storage.read(moduleId, ModuleSettings.VALUES_FILE)?.decodeToString()
+                storage.write(moduleId, ModuleSettings.VALUES_FILE, ModuleSettings.update(current, key, value).toByteArray())
+            }
+        }
+        loadSettings()
+        if (wasRunning) manager.start(moduleId)
+    }
+
     fun revoke(capability: Capability) {
         viewModelScope.launch { broker.revoke(moduleId, capability) }
     }
@@ -171,6 +215,13 @@ class ModuleDetailViewModel @Inject constructor(
     }
 
     init {
+        // A module describes its settings while it runs, so the list follows its state and output.
+        viewModelScope.launch {
+            merge(registry.observe(moduleId).map { it?.state }, logs.observe(moduleId).map { it.size }).conflate().collect {
+                loadSettings()
+                delay(SETTINGS_REFRESH_MILLIS)
+            }
+        }
         // Arriving from the editor's "save and run": continue with the start the user asked for.
         if (savedStateHandle.get<Boolean>(ARG_START) == true) {
             savedStateHandle[ARG_START] = false
@@ -181,6 +232,7 @@ class ModuleDetailViewModel @Inject constructor(
     companion object {
         const val ARG_MODULE_ID = "moduleId"
         const val ARG_START = "start"
+        private const val SETTINGS_REFRESH_MILLIS = 1_000L
     }
 }
 
@@ -203,6 +255,8 @@ fun ModuleDetailScreen(
         StartPermissionsDialog(module.manifest, missing, onStart = viewModel::confirmStart, onCancel = viewModel::cancelStart)
     }
 
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -213,7 +267,7 @@ fun ModuleDetailScreen(
         item(key = "run") {
             RunControls(module.state, state.busy, viewModel::start, viewModel::stop, viewModel::kill)
         }
-        if (module.signer == null && module.manifest.runtime == ModuleRuntimeKind.LUA) {
+        if (module.signer == null && module.manifest.runtime in LocalModules.RUNTIMES) {
             item(key = "edit") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { onEdit(module.id, null, null) }) { Text(stringResource(R.string.module_edit)) }
@@ -228,6 +282,10 @@ fun ModuleDetailScreen(
         }
         if (Capability.BACKGROUND_EXECUTION in module.manifest.permissions) {
             item(key = "autostart") { AutoStartSwitch(module.autoStart, viewModel::setAutoStart) }
+        }
+
+        if (settings.isNotEmpty()) {
+            item(key = "settings") { ModuleSettingsCard(settings, enabled = !state.busy, onChange = viewModel::changeSetting) }
         }
 
         state.ui?.let { root ->

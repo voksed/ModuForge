@@ -31,6 +31,11 @@
     <string name="module_open_error">Открыть %1$s, строка %2$d</string>
     <string name="editor_hint">Работающий модуль останавливается и запускается с новым кодом. Его файлы и выданные разрешения сохраняются.</string>
     <string name="module_edit">Редактировать код</string>
+    <string name="module_settings_header">Настройки</string>
+    <string name="module_settings_hint">Работающий модуль перезапускается, чтобы подхватить изменение.</string>
+    <string name="module_setting_unset">Не задано</string>
+    <string name="module_setting_change">Изменить</string>
+    <string name="module_setting_empty_hint">Оставьте пустым, чтобы удалить значение: модуль спросит его снова или возьмёт значение по умолчанию.</string>
     <string name="import_button">Импортировать файл (.mfrg, .lua или .js)</string>
     <string name="import_hint">Пакет проверяется и показывается вам. Скрипт открывается в редакторе, где виден весь код до того, как он станет модулем.</string>
     <string name="import_rejected">Не установлено</string>
