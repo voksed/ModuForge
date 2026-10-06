@@ -22,6 +22,12 @@ private const val USAGE = """mfrg - builds ModuForge module packages
       granted; --deny shows how the module behaves when the user refuses one. A single script
       needs no manifest. Press Ctrl+C to stop.
 
+  mfrg push [dir] [--token <token>] [--host <phone address>|usb] [--no-follow]
+      Packs the module, sends it to the app on your phone, which installs it and restarts the
+      module, and prints the module's output. Turn on developer mode in the app's settings
+      first; it shows the token. Over USB nothing else is needed (adb forwards the port); for
+      Wi-Fi pass the phone's address. Token and address are remembered after the first push.
+
   mfrg pack <dir> [--key <key-file>] [--out <file.mfrg>] [--dex <apk-or-dex>]
       Packs <dir> (moduforge.json plus every other file as module code) into a signed package.
       Session files, .env files and VCS/cache directories are left out.
@@ -66,6 +72,7 @@ fun run(args: List<String>, readLine: () -> String? = ::readlnOrNull, print: (St
         "keygen" -> keygen(File(options.positional(0, "key file")))
         "init" -> init(File(options.positional(0, "directory")), options)
         "pack" -> pack(File(options.positional(0, "directory")), options)
+        "push" -> push(File(options.positionalOrNull(0) ?: "."), options, print)
         "verify" -> verify(File(options.positional(0, "package file")))
         else -> USAGE
     }
@@ -105,7 +112,7 @@ internal class Options(args: List<String>) {
 
     private companion object {
         /** Options that take no value. */
-        val SWITCHES = setOf("allow-local")
+        val SWITCHES = setOf("allow-local", "no-follow")
     }
 }
 
@@ -174,9 +181,10 @@ internal fun projectFiles(dir: File, skippedSecrets: MutableList<String> = mutab
     return files
 }
 
-private fun pack(dir: File, options: Options): String {
+/** @param target where the package goes instead of the file named by `--out` or derived from the manifest. */
+internal fun pack(dir: File, options: Options, target: File? = null): String {
     val manifestFile = File(dir, ModulePackageFormat.MANIFEST)
-    if (!manifestFile.isFile) throw UsageError("$manifestFile not found; create it with 'mfrg init'")
+    if (!manifestFile.isFile) throw UsageError("$manifestFile not found; create a project with 'mfrg new'")
     val manifestJson = manifestFile.readText()
     val manifest = when (val parsed = ModuleManifests.parse(manifestJson)) {
         is ManifestResult.Valid -> parsed.manifest
@@ -193,7 +201,7 @@ private fun pack(dir: File, options: Options): String {
     } catch (e: Exception) {
         throw UsageError("cannot read signing key $keyFile: ${e.message}")
     }
-    val output = File(options.optional("out") ?: "${manifest.id}-${manifest.version}.${ModulePackageFormat.EXTENSION}").absoluteFile
+    val output = (target ?: File(options.optional("out") ?: "${manifest.id}-${manifest.version}.${ModulePackageFormat.EXTENSION}")).absoluteFile
 
     val skippedSecrets = mutableListOf<String>()
     val files = projectFiles(dir, skippedSecrets, exclude = output)

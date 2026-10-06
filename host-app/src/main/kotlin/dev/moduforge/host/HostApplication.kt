@@ -11,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 import dev.moduforge.core.module.ModuleManager
 import dev.moduforge.core.module.ModuleRuntime
 import dev.moduforge.host.runtime.BackgroundCoordinator
+import dev.moduforge.host.runtime.DeveloperMode
 import dev.moduforge.sandbox.ModulePackageStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -31,6 +32,8 @@ class HostApplication : Application() {
         fun backgroundCoordinator(): BackgroundCoordinator
 
         fun packageStore(): ModulePackageStore
+
+        fun developerMode(): DeveloperMode
     }
 
     /** Recovery and automatic module start, running since process start; null in sandbox processes. */
@@ -44,6 +47,7 @@ class HostApplication : Application() {
 
         val host = EntryPointAccessors.fromApplication(this, HostEntryPoint::class.java)
         host.backgroundCoordinator().start()
+        host.developerMode().start()
         startup = host.applicationScope().launch {
             host.packageStore().clearStaging()
             host.moduleManager().recover()

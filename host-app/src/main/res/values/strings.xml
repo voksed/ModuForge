@@ -169,6 +169,17 @@
     <string name="appearance_nav_labels">Labels in the navigation bar</string>
     <string name="appearance_reset">Reset appearance</string>
 
+    <string name="developer_title">For module developers</string>
+    <string name="developer_enable">Developer mode</string>
+    <string name="developer_enable_hint">Accept modules sent from your computer with mfrg push: the module is installed and restarted without tapping through the app. Works while the app is open.</string>
+    <string name="developer_port_busy">The connection point could not be opened: the port is in use. Turn the mode off and on again.</string>
+    <string name="developer_token">Pairing token</string>
+    <string name="developer_token_renew">New token</string>
+    <string name="developer_wifi">Accept over Wi-Fi</string>
+    <string name="developer_wifi_hint">Without this only a computer connected by USB can send modules. Turn it on only in a network you trust.</string>
+    <string name="developer_command_usb">Connect the phone by USB with debugging on and run in the module folder:</string>
+    <string name="developer_command_wifi">With the computer in the same network, run in the module folder:</string>
+
     <string name="settings_versions">Host %1$s · Module SDK %2$s</string>
     <string name="settings_offline_title">Works offline</string>
     <string name="settings_offline_body">The host never connects to the network on its own. It opens connections only for modules you granted internet access, and records each one in the audit log.</string>

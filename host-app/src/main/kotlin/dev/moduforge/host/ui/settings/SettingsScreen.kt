@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.moduforge.host.BuildConfig
 import dev.moduforge.host.R
+import dev.moduforge.host.runtime.DeveloperMode
 import dev.moduforge.host.appearance.Appearance
 import dev.moduforge.host.appearance.AppearanceStore
 import dev.moduforge.host.appearance.CornerStyle
@@ -56,7 +57,7 @@ import dev.moduforge.sdk.ModuForgeSdk
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(private val store: AppearanceStore) : ViewModel() {
+class SettingsViewModel @Inject constructor(private val store: AppearanceStore, val developer: DeveloperMode) : ViewModel() {
     val appearance = store.appearance
 
     fun update(change: (Appearance) -> Appearance) = store.update(change)
@@ -72,6 +73,15 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         AppearanceSection(appearance, viewModel::update, viewModel::reset)
+        HorizontalDivider()
+        val developer by viewModel.developer.state.collectAsStateWithLifecycle()
+        DeveloperSection(
+            state = developer,
+            addresses = viewModel.developer::localAddresses,
+            onEnabledChange = viewModel.developer::setEnabled,
+            onWifiChange = viewModel.developer::setWifi,
+            onRenewToken = viewModel.developer::renewToken,
+        )
         HorizontalDivider()
         Section(R.string.settings_offline_title, R.string.settings_offline_body)
         Section(R.string.settings_responsible_title, R.string.settings_responsible_body)
@@ -176,7 +186,7 @@ private fun <T> Choice(
 }
 
 @Composable
-private fun Toggle(@StringRes titleRes: Int, @StringRes hintRes: Int?, checked: Boolean, onChange: (Boolean) -> Unit) {
+internal fun Toggle(@StringRes titleRes: Int, @StringRes hintRes: Int?, checked: Boolean, onChange: (Boolean) -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().toggleable(value = checked, role = Role.Switch, onValueChange = onChange),

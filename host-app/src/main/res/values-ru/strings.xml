@@ -165,6 +165,17 @@
     <string name="appearance_nav_labels">Подписи в панели навигации</string>
     <string name="appearance_reset">Сбросить оформление</string>
 
+    <string name="developer_title">Разработчикам модулей</string>
+    <string name="developer_enable">Режим разработчика</string>
+    <string name="developer_enable_hint">Принимать модули, отправленные с компьютера командой mfrg push: модуль ставится и перезапускается без нажатий в приложении. Работает, пока приложение открыто.</string>
+    <string name="developer_port_busy">Не удалось открыть точку подключения: порт занят. Выключите и снова включите режим.</string>
+    <string name="developer_token">Код сопряжения</string>
+    <string name="developer_token_renew">Новый код</string>
+    <string name="developer_wifi">Принимать по Wi-Fi</string>
+    <string name="developer_wifi_hint">Без этого отправлять модули может только компьютер, подключённый по USB. Включайте только в сети, которой доверяете.</string>
+    <string name="developer_command_usb">Подключите телефон по USB с включённой отладкой и выполните в папке модуля:</string>
+    <string name="developer_command_wifi">Когда компьютер в той же сети, выполните в папке модуля:</string>
+
     <string name="settings_versions">Хост %1$s · SDK модулей %2$s</string>
     <string name="settings_offline_title">Работает без сети</string>
     <string name="settings_offline_body">Сам хост никогда не подключается к сети. Он открывает соединения только для модулей, которым вы выдали доступ в интернет, и записывает каждое в аудит-лог.</string>
