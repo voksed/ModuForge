@@ -16,6 +16,12 @@ private const val USAGE = """mfrg - builds ModuForge module packages
   mfrg new [dir]
       Asks a few questions and creates a ready-to-pack module project.
 
+  mfrg run <dir-or-script> [--allow-local] [--deny <PERMISSION>[,<PERMISSION>...]]
+      Runs a Lua or JavaScript module on this computer, with real network access and its
+      storage in .mfrg-run/ next to the code. Permissions declared in the manifest count as
+      granted; --deny shows how the module behaves when the user refuses one. A single script
+      needs no manifest. Press Ctrl+C to stop.
+
   mfrg pack <dir> [--key <key-file>] [--out <file.mfrg>] [--dex <apk-or-dex>]
       Packs <dir> (moduforge.json plus every other file as module code) into a signed package.
       Session files, .env files and VCS/cache directories are left out.
@@ -35,7 +41,7 @@ class UsageError(message: String) : Exception(message)
 
 fun main(args: Array<String>) {
     try {
-        println(run(args.toList()))
+        run(args.toList()).takeIf { it.isNotEmpty() }?.let(::println)
     } catch (e: UsageError) {
         System.err.println("error: ${e.message}")
         exitProcess(1)
@@ -46,12 +52,14 @@ fun main(args: Array<String>) {
  * Executes one command and returns its report.
  *
  * @param readLine source of the author's answers for interactive commands.
+ * @param print receives the live output of a module run with `mfrg run`.
  */
-fun run(args: List<String>, readLine: () -> String? = ::readlnOrNull): String {
+fun run(args: List<String>, readLine: () -> String? = ::readlnOrNull, print: (String) -> Unit = ::println): String {
     val options = Options(args.drop(1))
     return when (args.firstOrNull()) {
+        "run" -> runModule(File(options.positional(0, "module directory or script")), options, readLine, print)
         "new" -> createProject(options.positionalOrNull(0)?.let(::File)) { question, default ->
-            print(if (default.isEmpty()) "$question: " else "$question [$default]: ")
+            kotlin.io.print(if (default.isEmpty()) "$question: " else "$question [$default]: ")
             System.out.flush()
             readLine()
         }
@@ -63,15 +71,19 @@ fun run(args: List<String>, readLine: () -> String? = ::readlnOrNull): String {
     }
 }
 
-private class Options(args: List<String>) {
+internal class Options(args: List<String>) {
     private val positional = mutableListOf<String>()
     private val named = mutableMapOf<String, String>()
+    private val switches = mutableSetOf<String>()
 
     init {
         var index = 0
         while (index < args.size) {
             val arg = args[index]
-            if (arg.startsWith("--")) {
+            if (arg.removePrefix("--") in SWITCHES) {
+                switches += arg.removePrefix("--")
+                index++
+            } else if (arg.startsWith("--")) {
                 named[arg.removePrefix("--")] = args.getOrNull(index + 1) ?: throw UsageError("$arg needs a value")
                 index += 2
             } else {
@@ -88,6 +100,13 @@ private class Options(args: List<String>) {
     fun optional(name: String): String? = named[name]
 
     fun required(name: String): String = named[name] ?: throw UsageError("missing --$name")
+
+    fun switch(name: String): Boolean = name in switches
+
+    private companion object {
+        /** Options that take no value. */
+        val SWITCHES = setOf("allow-local")
+    }
 }
 
 /** Where the author's key lives when none is named: `MODUFORGE_KEY`, else `~/.moduforge/key.json`. */
@@ -126,8 +145,34 @@ private fun init(dir: File, options: Options): String {
     return "Wrote $manifest"
 }
 
-private val SKIPPED_DIRECTORIES = setOf(".git", ".hg", ".svn", ".idea", ".vscode", "__pycache__", "node_modules", "venv", ".venv")
+/** Directory `mfrg run` keeps a module's storage in; never part of a package. */
+internal const val RUN_DIRECTORY = ".mfrg-run"
+
+private val SKIPPED_DIRECTORIES =
+    setOf(".git", ".hg", ".svn", ".idea", ".vscode", "__pycache__", "node_modules", "venv", ".venv", RUN_DIRECTORY)
 private val SECRET_FILE = Regex("""(?i).*\.(session|session-journal)$|^\.env(\..*)?$""")
+
+/**
+ * Files of a module project by path relative to [dir], without the manifest, credentials,
+ * caches and earlier packages. Names of left-out credential files are added to [skippedSecrets].
+ */
+internal fun projectFiles(dir: File, skippedSecrets: MutableList<String> = mutableListOf(), exclude: File? = null): Map<String, ByteArray> {
+    val manifestFile = File(dir, ModulePackageFormat.MANIFEST)
+    val files = sortedMapOf<String, ByteArray>()
+    dir.walkTopDown()
+        .onEnter { it == dir || it.name !in SKIPPED_DIRECTORIES }
+        .filter { it.isFile && it != manifestFile && it.absoluteFile != exclude && it.extension != ModulePackageFormat.EXTENSION }
+        .forEach { file ->
+            val path = file.relativeTo(dir).invariantSeparatorsPath
+            when {
+                SECRET_FILE.matches(file.name) -> skippedSecrets += path
+                !ModuleManifests.isRelativePath(path) ->
+                    throw UsageError("unsupported file name: $path (allowed: letters, digits and _ . @ + -)")
+                else -> files[path] = file.readBytes()
+            }
+        }
+    return files
+}
 
 private fun pack(dir: File, options: Options): String {
     val manifestFile = File(dir, ModulePackageFormat.MANIFEST)
@@ -150,20 +195,9 @@ private fun pack(dir: File, options: Options): String {
     }
     val output = File(options.optional("out") ?: "${manifest.id}-${manifest.version}.${ModulePackageFormat.EXTENSION}").absoluteFile
 
-    val files = sortedMapOf<String, ByteArray>()
     val skippedSecrets = mutableListOf<String>()
-    dir.walkTopDown()
-        .onEnter { it == dir || it.name !in SKIPPED_DIRECTORIES }
-        .filter { it.isFile && it != manifestFile && it.absoluteFile != output && it.extension != ModulePackageFormat.EXTENSION }
-        .forEach { file ->
-            val path = file.relativeTo(dir).invariantSeparatorsPath
-            when {
-                SECRET_FILE.matches(file.name) -> skippedSecrets += path
-                !ModuleManifests.isRelativePath(path) ->
-                    throw UsageError("unsupported file name: $path (allowed: letters, digits and _ . @ + -)")
-                else -> files[ModulePackageFormat.CODE_PREFIX + path] = file.readBytes()
-            }
-        }
+    val files = projectFiles(dir, skippedSecrets, exclude = output)
+        .mapKeysTo(sortedMapOf()) { ModulePackageFormat.CODE_PREFIX + it.key }
     options.optional("dex")?.let { files += readDex(File(it)) }
 
     try {

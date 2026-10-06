@@ -28,6 +28,8 @@ tasks.named<JavaExec>("run") {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":runtime-script"))
+    implementation(libs.kotlinx.coroutines.core)
 
     testImplementation(libs.junit)
 }
