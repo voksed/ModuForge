@@ -69,6 +69,15 @@
     <string name="notifications_channel">Module notifications</string>
     <string name="audit_module_updated">Module updated</string>
     <string name="import_cancel">Cancel</string>
+    <string name="import_signer_confirmed">This is the key named by the install link: the package comes from the author who published the link.</string>
+    <string name="link_title">Download a module?</string>
+    <string name="link_body_signed">The link names the author\'s key. After the download the package is checked against it and shown for review; nothing is installed before you agree.</string>
+    <string name="link_body_unsigned">The link does not name the author\'s key, so compare the fingerprint yourself on the next screen. Nothing is installed before you agree.</string>
+    <string name="link_download">Download</string>
+    <string name="link_downloading">Downloading the module…</string>
+    <string name="link_download_failed">Download failed: %1$s</string>
+    <string name="link_signer_mismatch">The downloaded package is signed by a different key than the link names</string>
+    <string name="link_unusable">This install link is damaged or does not point to an https address</string>
 
     <string name="state_installed">Disabled</string>
     <string name="state_enabled">Enabled</string>

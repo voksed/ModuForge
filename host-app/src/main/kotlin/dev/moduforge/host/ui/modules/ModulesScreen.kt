@@ -11,7 +11,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.FilterChip
+import dev.moduforge.core.authoring.InstallLink
+import dev.moduforge.core.authoring.InstallLinks
 import dev.moduforge.core.authoring.LocalModules
+import dev.moduforge.host.runtime.IncomingPackage
+import dev.moduforge.host.runtime.IncomingPackages
+import java.io.File
+import java.net.URL
+import javax.net.ssl.HttpsURLConnection
 import dev.moduforge.core.authoring.ModuleTemplate
 import dev.moduforge.host.ui.languageRes
 import dev.moduforge.sdk.ModuleRuntimeKind
@@ -70,10 +77,112 @@ class ModulesViewModel @Inject constructor(
     registry: ModuleRegistry,
     private val drafts: EditorDrafts,
     private val installer: ModuleInstaller,
+    private val incoming: IncomingPackages,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _review = MutableStateFlow<PackageInspection.Ready?>(null)
+
+    private val _link = MutableStateFlow<InstallLink?>(null)
+
+    /** Install link awaiting the user's consent to download from it, or null. */
+    val link: StateFlow<InstallLink?> = _link
+
+    private val _downloading = MutableStateFlow(false)
+
+    /** A package named by a link is being downloaded. */
+    val downloading: StateFlow<Boolean> = _downloading
+
+    private val _signerConfirmed = MutableStateFlow(false)
+
+    /** The package under [review] is signed by the key its install link named. */
+    val signerConfirmed: StateFlow<Boolean> = _signerConfirmed
+
+    init {
+        // What the app was opened with from outside: a package file or an install link.
+        viewModelScope.launch {
+            incoming.pending.collect { pending ->
+                if (pending == null) return@collect
+                when (val item = incoming.take()) {
+                    is IncomingPackage.File -> inspect(item.uri)
+                    is IncomingPackage.Link -> _link.value = item.link
+                    IncomingPackage.Unusable -> _rejections.send(context.getString(R.string.link_unusable))
+                    null -> Unit
+                }
+            }
+        }
+    }
+
+    fun cancelDownload() {
+        _link.value = null
+    }
+
+    /** Downloads the package the pending link names and puts it up for [review]. */
+    fun confirmDownload() {
+        val link = _link.getAndUpdate { null } ?: return
+        if (!_downloading.compareAndSet(expect = false, update = true)) return
+        viewModelScope.launch {
+            val file = File(context.cacheDir, "download.mfrg")
+            try {
+                val problem = withContext(Dispatchers.IO) { download(link.url, file) }
+                if (problem != null) {
+                    _rejections.send(context.getString(R.string.link_download_failed, problem))
+                    return@launch
+                }
+                when (val result = installer.inspect { file.inputStream() }) {
+                    is PackageInspection.Rejected -> _rejections.send(result.reason)
+                    is PackageInspection.Ready ->
+                        if (InstallLinks.signerMatches(link, result.signer)) {
+                            show(result, signerConfirmed = link.signer != null)
+                        } else {
+                            // Whoever serves the file is not the author the link vouches for.
+                            installer.discard(result)
+                            _rejections.send(context.getString(R.string.link_signer_mismatch))
+                        }
+                }
+            } finally {
+                file.delete()
+                _downloading.value = false
+            }
+        }
+    }
+
+    /** @return what went wrong, or null when [target] holds the downloaded file. */
+    private fun download(address: String, target: File): String? = try {
+        val connection = URL(address).openConnection() as HttpsURLConnection
+        connection.connectTimeout = DOWNLOAD_TIMEOUT_MILLIS
+        connection.readTimeout = DOWNLOAD_TIMEOUT_MILLIS
+        try {
+            if (connection.responseCode != HttpsURLConnection.HTTP_OK) {
+                "HTTP ${connection.responseCode}"
+            } else {
+                var total = 0L
+                connection.inputStream.use { input ->
+                    target.outputStream().use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (total <= MAX_DOWNLOAD_BYTES) {
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            output.write(buffer, 0, read)
+                            total += read
+                        }
+                    }
+                }
+                if (total > MAX_DOWNLOAD_BYTES) "the file is too large" else null
+            }
+        } finally {
+            connection.disconnect()
+        }
+    } catch (e: IOException) {
+        e.message ?: e.javaClass.simpleName
+    } catch (e: ClassCastException) {
+        "not an HTTPS address"
+    }
+
+    private suspend fun show(inspected: PackageInspection.Ready, signerConfirmed: Boolean) {
+        _signerConfirmed.value = signerConfirmed
+        _review.getAndUpdate { inspected }?.let { installer.discard(it) }
+    }
 
     /** Verified package awaiting the user's decision, or null. */
     val review: StateFlow<PackageInspection.Ready?> = _review
@@ -100,7 +209,7 @@ class ModulesViewModel @Inject constructor(
                 context.contentResolver.openInputStream(uri) ?: throw IOException("cannot open $uri")
             }
             when (result) {
-                is PackageInspection.Ready -> _review.getAndUpdate { result }?.let { installer.discard(it) }
+                is PackageInspection.Ready -> show(result, signerConfirmed = false)
                 is PackageInspection.Rejected -> _rejections.send(result.reason)
             }
         }
@@ -161,6 +270,8 @@ class ModulesViewModel @Inject constructor(
     private companion object {
         /** A script has to fit into module storage limits and the editor. */
         const val MAX_SCRIPT_BYTES = 256 * 1024
+        const val MAX_DOWNLOAD_BYTES = 64L * 1024 * 1024
+        const val DOWNLOAD_TIMEOUT_MILLIS = 30_000
     }
 }
 
@@ -196,14 +307,33 @@ fun ModulesScreen(
         if (uri != null) viewModel.inspect(uri)
     }
     viewModel.review.collectAsStateWithLifecycle().value?.let { inspection ->
-        ImportReviewDialog(inspection, onInstall = viewModel::confirmImport, onCancel = viewModel::cancelImport)
+        val signerConfirmed by viewModel.signerConfirmed.collectAsStateWithLifecycle()
+        ImportReviewDialog(inspection, signerConfirmed, onInstall = viewModel::confirmImport, onCancel = viewModel::cancelImport)
     }
+    viewModel.link.collectAsStateWithLifecycle().value?.let { link ->
+        AlertDialog(
+            onDismissRequest = viewModel::cancelDownload,
+            title = { Text(stringResource(R.string.link_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(link.url, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(if (link.signer != null) R.string.link_body_signed else R.string.link_body_unsigned))
+                }
+            },
+            confirmButton = { TextButton(onClick = viewModel::confirmDownload) { Text(stringResource(R.string.link_download)) } },
+            dismissButton = { TextButton(onClick = viewModel::cancelDownload) { Text(stringResource(R.string.import_cancel)) } },
+        )
+    }
+    val downloading by viewModel.downloading.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (downloading) {
+            item(key = "downloading") { Text(stringResource(R.string.link_downloading)) }
+        }
         if (modules.isEmpty()) {
             item(key = "empty") {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

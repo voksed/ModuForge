@@ -41,6 +41,7 @@ import androidx.navigation.navArgument
 import dev.moduforge.host.R
 import dev.moduforge.host.consent.ConsentCoordinator
 import dev.moduforge.host.consent.InputCoordinator
+import dev.moduforge.host.runtime.IncomingPackages
 import dev.moduforge.host.ui.consent.InputDialog
 import dev.moduforge.host.ui.editor.EditorScreen
 import dev.moduforge.host.ui.editor.EditorViewModel
@@ -95,9 +96,19 @@ private val topLevel = listOf(
 /** Root of the host UI: navigation between screens plus the consent prompt, which overlays any screen. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ModuForgeApp(consent: ConsentCoordinator, input: InputCoordinator, wantsNotifications: StateFlow<Boolean>) {
+fun ModuForgeApp(
+    consent: ConsentCoordinator,
+    input: InputCoordinator,
+    incoming: IncomingPackages,
+    wantsNotifications: StateFlow<Boolean>,
+) {
     NotificationPermission(wantsNotifications)
     val navController = rememberNavController()
+    // A package or link opened from outside is reviewed on the module list, whatever screen was open.
+    val arrived = incoming.pending.collectAsStateWithLifecycle().value
+    LaunchedEffect(arrived) {
+        if (arrived != null) navController.popBackStack(ROUTE_MODULES, inclusive = false)
+    }
     val snackbar = remember { SnackbarHostState() }
     val route = navController.currentBackStackEntryAsState().value?.destination?.route
     val current = topLevel.firstOrNull { it.route == route }

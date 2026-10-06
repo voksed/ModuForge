@@ -1,5 +1,6 @@
 package dev.moduforge.host
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import dev.moduforge.host.appearance.AppearanceStore
 import dev.moduforge.host.consent.ConsentCoordinator
 import dev.moduforge.host.consent.InputCoordinator
 import dev.moduforge.host.runtime.BackgroundCoordinator
+import dev.moduforge.host.runtime.IncomingPackages
 import dev.moduforge.host.ui.ModuForgeApp
 import dev.moduforge.host.ui.theme.ModuForgeTheme
 import javax.inject.Inject
@@ -30,14 +32,24 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var appearanceStore: AppearanceStore
 
+    @Inject
+    lateinit var incoming: IncomingPackages
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // A restored activity has already handled the intent it was started with.
+        if (savedInstanceState == null) incoming.offer(intent)
         setContent {
             val appearance by appearanceStore.appearance.collectAsStateWithLifecycle()
             ModuForgeTheme(appearance) {
-                ModuForgeApp(consent, input, background.wantsNotifications)
+                ModuForgeApp(consent, input, incoming, background.wantsNotifications)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        incoming.offer(intent)
     }
 }

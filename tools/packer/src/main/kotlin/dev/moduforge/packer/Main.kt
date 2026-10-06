@@ -1,5 +1,6 @@
 package dev.moduforge.packer
 
+import dev.moduforge.core.authoring.InstallLinks
 import dev.moduforge.core.pkg.ModulePackageFormat
 import dev.moduforge.core.pkg.ModulePackageVerifier
 import dev.moduforge.core.pkg.ModulePackageWriter
@@ -32,6 +33,11 @@ private const val USAGE = """mfrg - builds ModuForge module packages
       Packs <dir> (moduforge.json plus every other file as module code) into a signed package.
       Session files, .env files and VCS/cache directories are left out.
       Without --key your personal key is used and created on first use (~/.moduforge/key.json).
+
+  mfrg link <file.mfrg> <https-address-of-the-file>
+      Prints an install link for a package you uploaded somewhere. Opening the link on a phone
+      (as text or as a QR code made from it) downloads the package and checks that it is
+      signed with your key, so users do not compare fingerprints by eye.
 
   mfrg keygen <key-file>
       Creates a signing key in a place of your choice.
@@ -74,6 +80,7 @@ fun run(args: List<String>, readLine: () -> String? = ::readlnOrNull, print: (St
         "pack" -> pack(File(options.positional(0, "directory")), options)
         "push" -> push(File(options.positionalOrNull(0) ?: "."), options, print)
         "verify" -> verify(File(options.positional(0, "package file")))
+        "link" -> link(File(options.positional(0, "package file")), options.positional(1, "https address of the uploaded package"))
         else -> USAGE
     }
 }
@@ -241,6 +248,15 @@ private fun readDex(source: File): Map<String, ByteArray> {
     }
     if (dex.isEmpty()) throw UsageError("$source contains no classes.dex")
     return dex
+}
+
+private fun link(file: File, address: String): String = when (val check = ModulePackageVerifier.verify(file)) {
+    is PackageCheck.Invalid -> throw UsageError("invalid package: ${check.reason}")
+    is PackageCheck.Valid -> try {
+        InstallLinks.create(address, check.signer)
+    } catch (e: IllegalArgumentException) {
+        throw UsageError(e.message ?: "invalid address")
+    }
 }
 
 private fun verify(file: File): String = when (val check = ModulePackageVerifier.verify(file)) {

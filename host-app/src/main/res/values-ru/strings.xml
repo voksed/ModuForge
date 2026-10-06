@@ -63,6 +63,15 @@
     <string name="notifications_channel">Уведомления модулей</string>
     <string name="audit_module_updated">Модуль обновлён</string>
     <string name="import_cancel">Отмена</string>
+    <string name="import_signer_confirmed">Это ключ, указанный в ссылке на установку: пакет от автора, опубликовавшего ссылку.</string>
+    <string name="link_title">Скачать модуль?</string>
+    <string name="link_body_signed">В ссылке указан ключ автора. После загрузки пакет сверяется с ним и показывается для проверки; до вашего согласия ничего не устанавливается.</string>
+    <string name="link_body_unsigned">В ссылке не указан ключ автора, поэтому сверьте отпечаток сами на следующем экране. До вашего согласия ничего не устанавливается.</string>
+    <string name="link_download">Скачать</string>
+    <string name="link_downloading">Модуль скачивается…</string>
+    <string name="link_download_failed">Не удалось скачать: %1$s</string>
+    <string name="link_signer_mismatch">Скачанный пакет подписан не тем ключом, который указан в ссылке</string>
+    <string name="link_unusable">Ссылка на установку повреждена или ведёт не на https-адрес</string>
 
     <string name="state_installed">Отключён</string>
     <string name="state_enabled">Включён</string>

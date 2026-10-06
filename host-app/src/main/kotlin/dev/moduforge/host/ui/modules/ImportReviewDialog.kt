@@ -24,7 +24,12 @@ import dev.moduforge.sandbox.PackageInspection
  * and every permission it may later ask for. Installing grants none of them.
  */
 @Composable
-fun ImportReviewDialog(inspection: PackageInspection.Ready, onInstall: () -> Unit, onCancel: () -> Unit) {
+fun ImportReviewDialog(
+    inspection: PackageInspection.Ready,
+    signerConfirmed: Boolean,
+    onInstall: () -> Unit,
+    onCancel: () -> Unit,
+) {
     val manifest = inspection.manifest
     AlertDialog(
         onDismissRequest = onCancel,
@@ -67,9 +72,9 @@ fun ImportReviewDialog(inspection: PackageInspection.Ready, onInstall: () -> Uni
                         fontFamily = FontFamily.Monospace,
                     )
                     Text(
-                        stringResource(R.string.import_signer_hint),
+                        stringResource(if (signerConfirmed) R.string.import_signer_confirmed else R.string.import_signer_hint),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (signerConfirmed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 if (manifest.description.isNotBlank()) {
