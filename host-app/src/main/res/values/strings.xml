@@ -77,7 +77,10 @@
     <string name="module_run_hint">A running module lives in its own isolated process. Stop asks it to finish; Kill destroys the process at once.</string>
     <string name="module_ui_header">Interface of module “%1$s” · module content</string>
     <string name="module_log_header">Module output</string>
-    <string name="module_log_empty">Nothing yet. Output is kept in memory only.</string>
+    <string name="module_log_empty">Nothing yet.</string>
+    <string name="module_log_share">Share</string>
+    <string name="module_log_clear">Clear</string>
+    <string name="module_log_share_title">Output of “%1$s”</string>
     <string name="module_uninstall">Uninstall</string>
     <string name="module_uninstall_hint">Disable the module to uninstall it. Its grants are removed with it.</string>
 

@@ -33,6 +33,7 @@ class ModuleManager(
     private val grants: GrantStore,
     private val audit: AuditLog,
     private val runtime: ModuleRuntime,
+    private val output: ModuleLogSink? = null,
     private val hostSdkVersion: SemVer = ModuForgeSdk.version,
     private val callbackTimeoutMs: Long = 10_000,
     private val clock: () -> Long = System::currentTimeMillis,
@@ -249,11 +250,25 @@ class ModuleManager(
 
     private suspend fun log(moduleId: String, type: AuditEventType, detail: String = "") {
         audit.record(AuditEvent(timestampMs = clock(), moduleId = moduleId, type = type, detail = detail))
+        // What happened to the module also belongs next to what the module printed.
+        val note = OUTPUT_NOTES[type] ?: return
+        val level = if (type in FAILURES) ModuleLogSink.Level.ERROR else ModuleLogSink.Level.INFO
+        output?.append(moduleId, level, if (detail.isEmpty()) "[host] $note" else "[host] $note: $detail")
     }
 
     companion object {
         /** Audit placeholder for packages whose manifest could not be read. */
         const val UNPARSED_MODULE_ID = "(unparsed)"
+
+        private val OUTPUT_NOTES = mapOf(
+            AuditEventType.MODULE_STARTED to "started",
+            AuditEventType.MODULE_STOPPED to "stopped",
+            AuditEventType.MODULE_KILLED to "killed",
+            AuditEventType.MODULE_CRASHED to "process died",
+            AuditEventType.MODULE_CALLBACK_FAILED to "failed",
+            AuditEventType.MODULE_UPDATED to "updated",
+        )
+        private val FAILURES = setOf(AuditEventType.MODULE_CRASHED, AuditEventType.MODULE_CALLBACK_FAILED)
 
         const val ORIGIN_BUNDLED = "unsigned, written on this device"
     }

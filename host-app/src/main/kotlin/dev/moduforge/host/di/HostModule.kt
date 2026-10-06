@@ -104,7 +104,8 @@ object HostModule {
         grants: GrantStore,
         audit: AuditLog,
         runtime: ModuleRuntime,
-    ): ModuleManager = ModuleManager(registry, grants, audit, runtime)
+        output: ModuleLogSink,
+    ): ModuleManager = ModuleManager(registry, grants, audit, runtime, output)
 
     @Provides
     @Singleton

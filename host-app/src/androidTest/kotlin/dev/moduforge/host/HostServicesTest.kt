@@ -50,7 +50,7 @@ class HostServicesTest {
     private val registry = MemoryRegistry()
     private val grants = MemoryGrants()
     private val audit = MemoryAudit()
-    private val logs = ModuleLogs()
+    private val logs = ModuleLogs(context)
     private val packages = ModulePackageStore(storage)
     private val dataRoot = File(storage, "data")
     private val moduleStorage = ModuleStorage(dataRoot, KeystoreStorageCipher("moduforge.test-storage"))

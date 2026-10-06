@@ -71,7 +71,10 @@
     <string name="module_run_hint">Работающий модуль живёт в собственном изолированном процессе. «Остановить» просит его завершиться, «Убить» уничтожает процесс сразу.</string>
     <string name="module_ui_header">Интерфейс модуля «%1$s» · содержимое модуля</string>
     <string name="module_log_header">Вывод модуля</string>
-    <string name="module_log_empty">Пока пусто. Вывод хранится только в памяти.</string>
+    <string name="module_log_empty">Пока пусто.</string>
+    <string name="module_log_share">Поделиться</string>
+    <string name="module_log_clear">Очистить</string>
+    <string name="module_log_share_title">Вывод модуля «%1$s»</string>
     <string name="module_uninstall">Удалить</string>
     <string name="module_uninstall_hint">Чтобы удалить модуль, отключите его. Выданные ему разрешения удаляются вместе с ним.</string>
 

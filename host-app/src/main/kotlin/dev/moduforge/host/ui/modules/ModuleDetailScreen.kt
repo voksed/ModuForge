@@ -1,6 +1,8 @@
 package dev.moduforge.host.ui.modules
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -78,7 +80,7 @@ class ModuleDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     registry: ModuleRegistry,
     grants: GrantStore,
-    logs: ModuleLogs,
+    private val logs: ModuleLogs,
     uiStore: ModuleUiStore,
     private val runtime: ModuleRuntime,
     private val manager: ModuleManager,
@@ -137,7 +139,14 @@ class ModuleDetailViewModel @Inject constructor(
 
     fun stop() = lifecycle { manager.stop(moduleId) }
 
-    fun uninstall() = lifecycle { installer.uninstall(moduleId) }
+    fun uninstall() = lifecycle {
+        if (installer.uninstall(moduleId)) logs.clear(moduleId)
+    }
+
+    /** The module output as text, for sharing. */
+    fun exportLog(): String = logs.export(moduleId)
+
+    fun clearLog() = logs.clear(moduleId)
 
     /** Not serialized with other operations: killing must work while a callback is hanging. */
     fun kill() {
@@ -228,7 +237,21 @@ fun ModuleDetailScreen(onGone: () -> Unit, onEdit: (String) -> Unit, viewModel: 
             PermissionCard(capability, state.grants[capability], onRevoke = { viewModel.revoke(capability) })
         }
 
-        item(key = "log") { LogCard(state.log) }
+        item(key = "log") {
+            val context = LocalContext.current
+            val title = stringResource(R.string.module_log_share_title, module.manifest.name)
+            LogCard(
+                lines = state.log,
+                onShare = {
+                    val send = Intent(Intent.ACTION_SEND)
+                        .setType("text/plain")
+                        .putExtra(Intent.EXTRA_SUBJECT, title)
+                        .putExtra(Intent.EXTRA_TEXT, viewModel.exportLog())
+                    context.startActivity(Intent.createChooser(send, title))
+                },
+                onClear = viewModel::clearLog,
+            )
+        }
 
         item(key = "uninstall") {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -353,11 +376,16 @@ private fun PermissionCard(capability: Capability, grant: GrantRecord?, onRevoke
 }
 
 @Composable
-private fun LogCard(lines: List<ModuleLogLine>) {
+private fun LogCard(lines: List<ModuleLogLine>, onShare: () -> Unit, onClear: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(stringResource(R.string.module_log_header), style = MaterialTheme.typography.titleMedium)
         if (lines.isEmpty()) {
             Text(stringResource(R.string.module_log_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onShare) { Text(stringResource(R.string.module_log_share)) }
+                TextButton(onClick = onClear) { Text(stringResource(R.string.module_log_clear)) }
+            }
         }
         lines.takeLast(VISIBLE_LOG_LINES).forEach { line ->
             Text(

@@ -55,7 +55,7 @@ class PackageImportTest {
     private val registry = MemoryRegistry()
     private val grants = MemoryGrants()
     private val audit = MemoryAudit()
-    private val logs = ModuleLogs()
+    private val logs = ModuleLogs(context)
     private val packages = ModulePackageStore(storage)
     private val moduleStorage = ModuleStorage(File(storage, "data"), KeystoreStorageCipher("moduforge.test-storage"))
     private val broker = DefaultPermissionBroker(registry, grants, { ConsentDecision.Allow() }, audit)
