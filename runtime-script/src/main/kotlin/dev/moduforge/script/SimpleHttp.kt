@@ -1,4 +1,4 @@
-package dev.moduforge.sandbox
+package dev.moduforge.script
 
 import dev.moduforge.sdk.NetworkGateway
 import kotlinx.coroutines.Dispatchers
@@ -9,22 +9,67 @@ import java.io.InputStream
 import java.net.URI
 
 /**
- * Minimal HTTP/1.1 client for script runtimes, running inside the sandbox on top of
- * [NetworkGateway.connect]. One request per connection; redirects are returned, not followed.
+ * Minimal HTTP/1.1 client for script runtimes, built on [NetworkGateway.connect].
+ * One request per connection. Redirects can be followed up to a given count.
  */
 internal object SimpleHttp {
     private const val MAX_HEAD_BYTES = 64 * 1024
     const val MAX_BODY_BYTES = 8 * 1024 * 1024
+    private val REDIRECTS = setOf(301, 302, 303, 307, 308)
 
-    class Response(val status: Int, val headers: Map<String, String>, val body: ByteArray)
+    /** @property url address the response came from, after redirects. */
+    class Response(val status: Int, val headers: Map<String, String>, val body: ByteArray, val url: String)
 
-    /** @throws IOException for an unusable URL, a malformed response or an oversized body. */
+    /**
+     * @param redirects how many redirects to follow; 0 returns a 3xx response as it is.
+     * @throws IOException for an unusable URL, a malformed response, an oversized body or a redirect loop.
+     */
     suspend fun request(
         network: NetworkGateway,
         method: String,
         url: String,
         headers: Map<String, String> = emptyMap(),
         body: ByteArray? = null,
+        redirects: Int = 0,
+    ): Response {
+        var verb = method.uppercase()
+        var target = url
+        var sentHeaders = headers
+        var sentBody = body
+        var remaining = redirects
+        while (true) {
+            val response = once(network, verb, target, sentHeaders, sentBody)
+            val location = response.headers["location"]
+            if (response.status !in REDIRECTS || location == null || remaining <= 0) {
+                if (response.status in REDIRECTS && location != null && redirects > 0) throw IOException("too many redirects")
+                return response
+            }
+            remaining--
+            val next = try {
+                URI(target).resolve(location.trim())
+            } catch (e: IllegalArgumentException) {
+                throw IOException("malformed redirect address")
+            }
+            // A redirect to another host must not carry credentials meant for the first one.
+            if (!next.host.equals(URI(target).host, ignoreCase = true)) {
+                sentHeaders = sentHeaders.filterKeys { !it.equals("Authorization", true) && !it.equals("Cookie", true) }
+            }
+            // 303 always, and 301/302 after anything but GET or HEAD, continue as a plain GET.
+            if (response.status == 303 || (response.status in setOf(301, 302) && verb != "GET" && verb != "HEAD")) {
+                verb = "GET"
+                sentBody = null
+                sentHeaders = sentHeaders.filterKeys { !it.equals("Content-Type", true) }
+            }
+            target = next.toString()
+        }
+    }
+
+    private suspend fun once(
+        network: NetworkGateway,
+        verb: String,
+        url: String,
+        headers: Map<String, String>,
+        body: ByteArray?,
     ): Response {
         val uri = try {
             URI(url)
@@ -38,8 +83,7 @@ internal object SimpleHttp {
         }
         val host = uri.host ?: throw IOException("URL has no host")
         val port = if (uri.port > 0) uri.port else if (tls) 443 else 80
-        val verb = method.uppercase()
-        if (!verb.all { it in 'A'..'Z' }) throw IOException("invalid method")
+        if (verb.isEmpty() || !verb.all { it in 'A'..'Z' }) throw IOException("invalid method")
         (headers.keys + headers.values).firstOrNull { '\r' in it || '\n' in it }?.let { throw IOException("invalid header") }
 
         val head = buildString {
@@ -59,12 +103,12 @@ internal object SimpleHttp {
                 connection.output.write(head.toByteArray(Charsets.ISO_8859_1))
                 if (body != null) connection.output.write(body)
                 connection.output.flush()
-                read(connection.input, expectBody = verb != "HEAD")
+                read(connection.input, expectBody = verb != "HEAD", url = url)
             }
         }
     }
 
-    private fun read(input: InputStream, expectBody: Boolean): Response {
+    private fun read(input: InputStream, expectBody: Boolean, url: String): Response {
         val lines = readHead(input)
         val status = lines.firstOrNull()?.split(' ')?.getOrNull(1)?.toIntOrNull() ?: throw IOException("malformed HTTP response")
         val headers = lines.drop(1).mapNotNull { line ->
@@ -80,7 +124,7 @@ internal object SimpleHttp {
             }
             else -> readToEnd(input)
         }
-        return Response(status, headers, body)
+        return Response(status, headers, body, url)
     }
 
     private fun readHead(input: InputStream): List<String> {

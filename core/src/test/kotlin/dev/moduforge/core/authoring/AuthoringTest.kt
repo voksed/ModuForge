@@ -25,17 +25,45 @@ class AuthoringTest {
     }
 
     @Test
+    fun `JavaScript is analysed with its own comment and require syntax`() {
+        val js = dev.moduforge.sdk.ModuleRuntimeKind.JS
+        assertEquals(
+            setOf(Capability.NETWORK_OUTBOUND, Capability.FILE_SANDBOXED),
+            ScriptAnalyzer.detectPermissions("var t = require('mf/telegram');", js),
+        )
+        assertEquals(setOf(Capability.NETWORK_OUTBOUND), ScriptAnalyzer.detectPermissions("""mf.websocket("wss://x"); // mf.notify""", js))
+        assertEquals(setOf(Capability.NETWORK_OUTBOUND), ScriptAnalyzer.detectPermissions("""var u = "https://a.example/"; mf.http({url: u});""", js))
+        assertEquals(emptySet<Capability>(), ScriptAnalyzer.detectPermissions("// mf.http({})\nvar a = 1 - -1;", js))
+        assertTrue(ScriptAnalyzer.usesInterface("mf.ui.show([])", js))
+        assertTrue(!ScriptAnalyzer.usesInterface("-- mf.ui.show{}"))
+    }
+
+    @Test
+    fun `a script with an interface is declared as having one`() {
+        val manifest = LocalModules.manifest("local.a", "A", "mf.ui.show({})", emptySet(), null)
+        assertEquals(dev.moduforge.sdk.UiKind.COMPOSE, manifest.ui)
+        assertEquals(dev.moduforge.sdk.ModuleRuntimeKind.JS, LocalModules.runtimeForFile("Bot.JS"))
+        assertEquals(null, LocalModules.runtimeForFile("notes.txt"))
+    }
+
+    @Test
     fun `calls inside comments do not count`() {
         assertEquals(emptySet<Capability>(), ScriptAnalyzer.detectPermissions("-- mf.http{}\nmf.log('x') -- mf.notify"))
     }
 
     @Test
     fun `every template declares what its script uses and yields a valid manifest`() {
+        assertEquals(6, ModuleTemplates.ALL.map { it.key }.toSet().size)
         ModuleTemplates.ALL.forEach { template ->
-            val detected = ScriptAnalyzer.detectPermissions(template.script)
+            val detected = ScriptAnalyzer.detectPermissions(template.script, template.runtime)
             assertTrue("${template.key}: $detected", template.permissions.keys.containsAll(detected))
-            val manifest = LocalModules.manifest("local.x", template.title, template.script, template.permissions.keys, null)
+            val manifest = LocalModules.manifest("local.x", template.title, template.script, template.permissions.keys, null, template.runtime)
             assertTrue(template.key, ModuleManifests.validate(manifest).isEmpty())
+            assertEquals(template.runtime, manifest.runtime)
+            assertEquals(LocalModules.entryFor(template.runtime), manifest.entry)
+        }
+        LocalModules.RUNTIMES.forEach { runtime ->
+            assertEquals(setOf("telegram", "watcher", "empty"), ModuleTemplates.forRuntime(runtime).map { it.kind }.toSet())
         }
     }
 

@@ -1,5 +1,6 @@
 package dev.moduforge.packer
 
+import dev.moduforge.core.authoring.LocalModules
 import dev.moduforge.core.authoring.ModuleTemplates
 import dev.moduforge.core.pkg.ModulePackageVerifier
 import dev.moduforge.core.pkg.PackageCheck
@@ -68,11 +69,13 @@ class PackerTest {
     @Test
     fun `wizard creates a project that packs as it is`() {
         val key = key()
-        ModuleTemplates.ALL.forEachIndexed { index, template ->
+        ModuleTemplates.ALL.forEach { template ->
             val dir = File(temp.root, "wizard-${template.key}")
+            val language = LocalModules.RUNTIMES.indexOf(template.runtime) + 1
+            val choice = ModuleTemplates.forRuntime(template.runtime).indexOf(template) + 1
             val report = run(
                 listOf("new", dir.path),
-                answers("Price \"watch\" 2", "", "Ada", "Says \\ things", (index + 1).toString()),
+                answers("Price \"watch\" 2", "", "Ada", "Says \\ things", language.toString(), choice.toString()),
             )
             assertTrue(report, dir.path in report)
 
@@ -84,6 +87,8 @@ class PackerTest {
             assertEquals("Says \\ things", manifest.description)
             assertEquals(template.permissions.keys.toList(), manifest.permissions)
             assertEquals(template.permissions, manifest.permissionReasons)
+            assertEquals(template.runtime, manifest.runtime)
+            assertTrue(File(dir, manifest.entry).isFile)
         }
     }
 

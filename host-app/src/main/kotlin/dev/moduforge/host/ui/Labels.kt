@@ -5,6 +5,7 @@ import dev.moduforge.core.audit.AuditEventType
 import dev.moduforge.core.module.ModuleState
 import dev.moduforge.host.R
 import dev.moduforge.sdk.Capability
+import dev.moduforge.sdk.ModuleRuntimeKind
 import dev.moduforge.sdk.Sensitivity
 
 /** Human-readable name of a capability. */
@@ -45,6 +46,16 @@ val Sensitivity.labelRes: Int
         Sensitivity.NORMAL -> R.string.sensitivity_normal
         Sensitivity.SENSITIVE -> R.string.sensitivity_sensitive
         Sensitivity.INTRUSIVE -> R.string.sensitivity_intrusive
+    }
+
+/** Name of the language a module is written in. */
+@get:StringRes
+val ModuleRuntimeKind.languageRes: Int
+    get() = when (this) {
+        ModuleRuntimeKind.LUA -> R.string.language_lua
+        ModuleRuntimeKind.JS -> R.string.language_js
+        ModuleRuntimeKind.PYTHON -> R.string.language_python
+        ModuleRuntimeKind.DEX -> R.string.language_kotlin
     }
 
 @get:StringRes

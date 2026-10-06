@@ -22,8 +22,8 @@ android {
 
 dependencies {
     api(project(":core"))
+    implementation(project(":runtime-script"))
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.luaj)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

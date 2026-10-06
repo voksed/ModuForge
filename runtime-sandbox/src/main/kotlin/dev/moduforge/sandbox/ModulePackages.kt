@@ -198,7 +198,8 @@ class ModuleInstaller(
 
     /** Script of a module written on this device; null when the module has no such script. */
     suspend fun readLocalSource(moduleId: String): String? = withContext(Dispatchers.IO) {
-        store.readEntry(moduleId, ModulePackageFormat.CODE_PREFIX + LocalModules.ENTRY)?.decodeToString()
+        val entry = registry.find(moduleId)?.manifest?.entry ?: return@withContext null
+        store.readEntry(moduleId, ModulePackageFormat.CODE_PREFIX + entry)?.decodeToString()
     }
 
     suspend fun uninstall(moduleId: String): Boolean {

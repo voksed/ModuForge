@@ -18,6 +18,7 @@ rootProject.name = "ModuForge"
 
 include(":sdk")
 include(":core")
+include(":runtime-script")
 include(":runtime-sandbox")
 include(":host-app")
 include(":modules:hello")

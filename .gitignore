@@ -16,3 +16,6 @@ captures/
 
 # Release builds
 dist/
+
+# IDE build output
+bin/

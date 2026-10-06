@@ -1,84 +1,17 @@
-package dev.moduforge.sandbox
+package dev.moduforge.script
 
-import dev.moduforge.sdk.Capability
-import dev.moduforge.sdk.CapabilityGateway
-import dev.moduforge.sdk.CapabilityRequest
-import dev.moduforge.sdk.CapabilityResult
-import dev.moduforge.sdk.Connection
-import dev.moduforge.sdk.ModuleContext
-import dev.moduforge.sdk.ModuleLogger
-import dev.moduforge.sdk.ModuleManifest
 import dev.moduforge.sdk.ModuleRuntimeKind
-import dev.moduforge.sdk.NetworkGateway
-import dev.moduforge.sdk.NotificationGateway
-import dev.moduforge.sdk.StorageGateway
-import dev.moduforge.sdk.UserPrompt
-import dev.moduforge.sdk.ui.UiNode
-import dev.moduforge.sdk.ui.UiSurface
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.io.IOException
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 /** Runs the libraries shipped with the Lua runtime against an in-memory host. */
 class LuaLibrariesTest {
 
-    private class FakeHost(private val answers: MutableList<String?>) : ModuleContext {
-        val lines = CopyOnWriteArrayList<String>()
-        val files = mutableMapOf<String, ByteArray>()
-        val questions = CopyOnWriteArrayList<String>()
-        val finished = CountDownLatch(1)
-
-        override val manifest = ModuleManifest("com.example.t", "T", "1.0.0", "1.0.0", "main.lua", ModuleRuntimeKind.LUA)
-        override val capabilities = object : CapabilityGateway {
-            override suspend fun request(request: CapabilityRequest) = CapabilityResult.Granted
-            override suspend fun isGranted(capability: Capability, target: String?) = true
-        }
-        override val log = object : ModuleLogger {
-            override fun info(message: String) { lines += message }
-            override fun warn(message: String) { lines += message }
-            override fun error(message: String, cause: Throwable?) { lines += "ERROR $message" }
-        }
-        override val ui = object : UiSurface {
-            override fun show(root: UiNode) = Unit
-            override fun clear() = Unit
-        }
-        override val network = object : NetworkGateway {
-            override suspend fun connect(host: String, port: Int, tls: Boolean): Connection = throw IOException("offline")
-        }
-        override val storage = object : StorageGateway {
-            override suspend fun read(path: String) = files[path]
-            override suspend fun write(path: String, data: ByteArray) { files[path] = data }
-            override suspend fun delete(path: String) = files.remove(path) != null
-            override suspend fun list() = files.keys.sorted()
-        }
-        override val notifications = object : NotificationGateway {
-            override suspend fun notify(title: String, text: String) { lines += "NOTIFY $title|$text" }
-        }
-        override val prompt = object : UserPrompt {
-            override suspend fun ask(question: String, secret: Boolean): String? {
-                questions += "$question|$secret"
-                return answers.removeAt(0)
-            }
-        }
-
-        override fun stopSelf(reason: String) {
-            lines += "STOP $reason"
-            finished.countDown()
-        }
-    }
-
     private fun run(script: String, vararg answers: String?, files: Map<String, String> = emptyMap()): FakeHost {
         val host = FakeHost(answers.toMutableList())
         files.forEach { (path, content) -> host.files[path] = content.toByteArray() }
-        val module = LuaScriptModule(mapOf("main.lua" to script.trimIndent().toByteArray()), "main.lua")
-        runBlocking { module.onStart(host) }
-        assertTrue("script did not finish: ${host.lines}", host.finished.await(20, TimeUnit.SECONDS))
-        return host
+        return runScript(ModuleRuntimeKind.LUA, script, host)
     }
 
     @Test
@@ -212,16 +145,11 @@ class LuaLibrariesTest {
 
     @Test
     fun `module files take precedence over the bundled libraries`() {
-        val host = FakeHost(mutableListOf())
-        val module = LuaScriptModule(
-            mapOf(
-                "main.lua" to """mf.log(require("mf.config").marker)""".toByteArray(),
-                "mf/config.lua" to """return { marker = "own copy" }""".toByteArray(),
-            ),
-            "main.lua",
+        val host = runScript(
+            ModuleRuntimeKind.LUA,
+            """mf.log(require("mf.config").marker)""",
+            extraFiles = mapOf("mf/config.lua" to """return { marker = "own copy" }"""),
         )
-        runBlocking { module.onStart(host) }
-        assertTrue(host.finished.await(20, TimeUnit.SECONDS))
         assertEquals("own copy", host.lines.first())
     }
 }

@@ -12,6 +12,7 @@ import dev.moduforge.sandbox.ipc.IHostBridge
 import dev.moduforge.sandbox.ipc.IResultCallback
 import dev.moduforge.sandbox.ipc.ISandbox
 import dev.moduforge.sandbox.ipc.IConnectCallback
+import dev.moduforge.script.ScriptRuntimes
 import dev.moduforge.sdk.Capability
 import dev.moduforge.sdk.CapabilityNotGrantedException
 import dev.moduforge.sdk.Connection
@@ -146,13 +147,13 @@ internal object ModuleLoader {
     private val DEX_ENTRY = Regex("""classes\d*\.dex""")
 
     /** Runtimes this sandbox can execute. */
-    val SUPPORTED_RUNTIMES = setOf(ModuleRuntimeKind.DEX, ModuleRuntimeKind.LUA)
+    val SUPPORTED_RUNTIMES = setOf(ModuleRuntimeKind.DEX) + ScriptRuntimes.SUPPORTED
 
     fun load(modulePackage: ParcelFileDescriptor, manifest: ModuleManifest): Module {
         val code = ParcelFileDescriptor.AutoCloseInputStream(modulePackage).use(::readCode)
         return when (manifest.runtime) {
             ModuleRuntimeKind.DEX -> loadDex(code, manifest.entry)
-            ModuleRuntimeKind.LUA -> LuaScriptModule(code, manifest.entry)
+            in ScriptRuntimes.SUPPORTED -> ScriptRuntimes.create(manifest.runtime, code, manifest.entry)
             else -> error("runtime ${manifest.runtime.name.lowercase()} is not supported by this host")
         }
     }

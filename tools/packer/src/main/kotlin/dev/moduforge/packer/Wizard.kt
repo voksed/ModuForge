@@ -1,5 +1,6 @@
 package dev.moduforge.packer
 
+import dev.moduforge.core.authoring.LocalModules
 import dev.moduforge.core.authoring.ModuleTemplates
 import dev.moduforge.core.pkg.ModulePackageFormat
 import dev.moduforge.sdk.ManifestResult
@@ -23,17 +24,23 @@ internal fun createProject(target: File?, ask: (question: String, default: Strin
     val author = answer("Author", System.getProperty("user.name").orEmpty())
     val description = answer("What does it do (one sentence)", "")
 
-    val menu = ModuleTemplates.ALL.mapIndexed { index, template -> "  ${index + 1}. ${template.title}" }.joinToString("\n")
+    val languages = LocalModules.RUNTIMES
+    val languageMenu = languages.mapIndexed { index, runtime -> "  ${index + 1}. ${languageName(runtime)}" }.joinToString("\n")
+    val language = languages.getOrNull((answer("Language\n$languageMenu\nNumber", "1").toIntOrNull() ?: 0) - 1)
+        ?: throw UsageError("choose a number from 1 to ${languages.size}")
+
+    val templates = ModuleTemplates.forRuntime(language)
+    val menu = templates.mapIndexed { index, template -> "  ${index + 1}. ${template.title}" }.joinToString("\n")
     val choice = answer("What to start from\n$menu\nNumber", "1").toIntOrNull()
-    val template = ModuleTemplates.ALL.getOrNull((choice ?: 0) - 1) ?: throw UsageError("choose a number from 1 to ${ModuleTemplates.ALL.size}")
+    val template = templates.getOrNull((choice ?: 0) - 1) ?: throw UsageError("choose a number from 1 to ${templates.size}")
 
     val manifest = ModuleManifest(
         id = id,
         name = name,
         version = "0.1.0",
         sdkRange = ">=1.0.0 <2.0.0",
-        entry = "main.lua",
-        runtime = ModuleRuntimeKind.LUA,
+        entry = LocalModules.entryFor(language),
+        runtime = language,
         permissions = template.permissions.keys.toList(),
         permissionReasons = template.permissions,
         author = author,
@@ -46,14 +53,14 @@ internal fun createProject(target: File?, ask: (question: String, default: Strin
     if (manifestFile.exists()) throw UsageError("$manifestFile already exists")
     dir.mkdirs()
     manifestFile.writeText(prettyManifest(manifest))
-    File(dir, "main.lua").writeText(template.script.trimIndent() + "\n")
+    File(dir, manifest.entry).writeText(template.script)
 
     return """
         Created ${dir.path}
           ${ModulePackageFormat.MANIFEST}   what the module is and which permissions it may get
-          main.lua         the script that runs when the module starts
+          ${manifest.entry.padEnd(16)} the script that runs when the module starts
 
-        Next: edit main.lua, then run
+        Next: edit ${manifest.entry}, then run
           mfrg pack ${dir.path}
         and import the resulting .${ModulePackageFormat.EXTENSION} file in the app.
     """.trimIndent()
@@ -69,7 +76,7 @@ private fun prettyManifest(manifest: ModuleManifest): String {
         appendLine("  \"name\": ${quote(manifest.name)},")
         appendLine("  \"version\": ${quote(manifest.version)},")
         appendLine("  \"sdkRange\": ${quote(manifest.sdkRange)},")
-        appendLine("  \"runtime\": \"lua\",")
+        appendLine("  \"runtime\": \"${manifest.runtime.name.lowercase()}\",")
         appendLine("  \"entry\": ${quote(manifest.entry)},")
         appendLine("  \"author\": ${quote(manifest.author)},")
         appendLine("  \"description\": ${quote(manifest.description)},")
@@ -79,4 +86,11 @@ private fun prettyManifest(manifest: ModuleManifest): String {
     }
     check(ModuleManifests.parse(text) == ManifestResult.Valid(manifest)) { "generated manifest does not round-trip" }
     return text
+}
+
+internal fun languageName(runtime: ModuleRuntimeKind): String = when (runtime) {
+    ModuleRuntimeKind.LUA -> "Lua"
+    ModuleRuntimeKind.JS -> "JavaScript"
+    ModuleRuntimeKind.PYTHON -> "Python"
+    ModuleRuntimeKind.DEX -> "Kotlin"
 }

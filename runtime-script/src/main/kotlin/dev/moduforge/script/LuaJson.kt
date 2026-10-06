@@ -1,4 +1,4 @@
-package dev.moduforge.sandbox
+package dev.moduforge.script
 
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json

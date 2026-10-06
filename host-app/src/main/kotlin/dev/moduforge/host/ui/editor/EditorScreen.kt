@@ -44,7 +44,9 @@ import dev.moduforge.core.permission.PermissionBroker
 import dev.moduforge.host.R
 import dev.moduforge.host.ui.titleRes
 import dev.moduforge.sandbox.ModuleInstaller
+import dev.moduforge.host.ui.languageRes
 import dev.moduforge.sdk.Capability
+import dev.moduforge.sdk.ModuleRuntimeKind
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,7 +60,7 @@ import javax.inject.Singleton
 /** Source handed to the editor from outside a navigation argument, e.g. an imported `.lua` file. */
 @Singleton
 class EditorDrafts @Inject constructor() {
-    class Draft(val name: String, val source: String)
+    class Draft(val name: String, val source: String, val runtime: ModuleRuntimeKind)
 
     private var pending: Draft? = null
 
@@ -80,6 +82,7 @@ data class EditorState(
     val loading: Boolean = true,
     val moduleId: String? = null,
     val name: String = "",
+    val runtime: ModuleRuntimeKind = ModuleRuntimeKind.LUA,
     val source: String = "",
     val selected: Set<Capability> = emptySet(),
     val detected: Set<Capability> = emptySet(),
@@ -117,13 +120,15 @@ class EditorViewModel @Inject constructor(
                 draft != null -> draft.source
                 else -> template?.script.orEmpty()
             }
+            val runtime = record?.manifest?.runtime ?: draft?.runtime ?: template?.runtime ?: ModuleRuntimeKind.LUA
             _state.value = EditorState(
                 loading = false,
                 moduleId = record?.id,
                 name = record?.manifest?.name ?: draft?.name.orEmpty(),
+                runtime = runtime,
                 source = source,
                 selected = record?.manifest?.permissions?.toSet() ?: template?.permissions?.keys.orEmpty(),
-                detected = ScriptAnalyzer.detectPermissions(source),
+                detected = ScriptAnalyzer.detectPermissions(source, runtime),
             )
         }
     }
@@ -131,7 +136,7 @@ class EditorViewModel @Inject constructor(
     fun setName(name: String) = _state.update { it.copy(name = name, problem = null) }
 
     fun setSource(source: String) =
-        _state.update { it.copy(source = source, detected = ScriptAnalyzer.detectPermissions(source), problem = null) }
+        _state.update { it.copy(source = source, detected = ScriptAnalyzer.detectPermissions(source, it.runtime), problem = null) }
 
     fun toggle(capability: Capability) =
         _state.update { it.copy(selected = if (capability in it.selected) it.selected - capability else it.selected + capability) }
@@ -146,7 +151,7 @@ class EditorViewModel @Inject constructor(
             val installed = registry.observeAll().first().map { it.id }.toSet()
             val id = previous?.id ?: LocalModules.idFor(current.name) { it in installed }
             if (previous?.state == ModuleState.RUNNING) manager.stop(id, "stopped to save new code")
-            val manifest = LocalModules.manifest(id, current.name, current.source, current.selected, previous?.manifest)
+            val manifest = LocalModules.manifest(id, current.name, current.source, current.selected, previous?.manifest, current.runtime)
             when (val result = installer.saveLocal(manifest, current.source)) {
                 is InstallResult.Rejected ->
                     _state.update { it.copy(saving = false, problem = result.problems.joinToString("; ")) }
@@ -213,7 +218,7 @@ fun EditorScreen(onSaved: (Saved) -> Unit, viewModel: EditorViewModel = hiltView
         OutlinedTextField(
             value = state.source,
             onValueChange = viewModel::setSource,
-            label = { Text(stringResource(R.string.editor_code)) },
+            label = { Text(stringResource(R.string.editor_code, stringResource(state.runtime.languageRes))) },
             textStyle = TextStyle(fontFamily = FontFamily.Monospace),
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false),
             minLines = 14,

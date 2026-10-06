@@ -9,7 +9,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.FilterChip
+import dev.moduforge.core.authoring.LocalModules
 import dev.moduforge.core.authoring.ModuleTemplate
+import dev.moduforge.host.ui.languageRes
+import dev.moduforge.sdk.ModuleRuntimeKind
 import dev.moduforge.core.authoring.ModuleTemplates
 import dev.moduforge.host.ui.editor.EditorDrafts
 import kotlinx.coroutines.Dispatchers
@@ -119,7 +124,11 @@ class ModulesViewModel @Inject constructor(
         } else {
             val fileName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
                 ?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
-            EditorDrafts.Draft(fileName.orEmpty().substringBeforeLast('.'), bytes.decodeToString())
+            EditorDrafts.Draft(
+                name = fileName.orEmpty().substringBeforeLast('.'),
+                source = bytes.decodeToString(),
+                runtime = LocalModules.runtimeForFile(fileName.orEmpty()) ?: ModuleRuntimeKind.LUA,
+            )
         }
     } catch (e: IOException) {
         null
@@ -239,12 +248,22 @@ fun ModulesScreen(
 /** Lets the user choose what a new module starts from. */
 @Composable
 private fun TemplateDialog(onPick: (String) -> Unit, onCancel: () -> Unit) {
+    var language by remember { mutableStateOf(LocalModules.RUNTIMES.first()) }
     AlertDialog(
         onDismissRequest = onCancel,
         title = { Text(stringResource(R.string.create_title)) },
         text = {
             Column {
-                ModuleTemplates.ALL.forEach { template ->
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LocalModules.RUNTIMES.forEach { runtime ->
+                        FilterChip(
+                            selected = runtime == language,
+                            onClick = { language = runtime },
+                            label = { Text(stringResource(runtime.languageRes)) },
+                        )
+                    }
+                }
+                ModuleTemplates.forRuntime(language).forEach { template ->
                     TextButton(onClick = { onPick(template.key) }, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(template.labelRes), modifier = Modifier.fillMaxWidth())
                     }
@@ -257,9 +276,9 @@ private fun TemplateDialog(onPick: (String) -> Unit, onCancel: () -> Unit) {
 }
 
 private val ModuleTemplate.labelRes: Int
-    get() = when (key) {
-        "telegram" -> R.string.template_telegram
-        "watcher" -> R.string.template_watcher
+    get() = when (kind) {
+        ModuleTemplates.TELEGRAM -> R.string.template_telegram
+        ModuleTemplates.WATCHER -> R.string.template_watcher
         else -> R.string.template_empty
     }
 
