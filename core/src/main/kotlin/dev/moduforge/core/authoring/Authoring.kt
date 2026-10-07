@@ -170,6 +170,11 @@ object ScriptAnalyzer {
         Regex("""\bmf\s*\.\s*(http|connect|websocket)\b|["']mf[./]telegram["']""") to Capability.NETWORK_OUTBOUND,
         Regex("""\bmf\s*\.\s*storage\b|["']mf[./](config|telegram)["']""") to Capability.FILE_SANDBOXED,
         Regex("""\bmf\s*\.\s*notify\b""") to Capability.NOTIFICATIONS,
+        Regex("""\bmf\s*\.\s*apps\b""") to Capability.LAUNCH_APPS,
+        Regex("""\bmf\s*\.\s*camera\b""") to Capability.CAMERA,
+        Regex("""\bmf\s*\.\s*screen\b""") to Capability.SCREEN_CONTROL,
+        // Opening or operating another app takes ModuForge off the screen, and the host stops modules that cannot work in the background.
+        Regex("""\bmf\s*\.\s*(apps|screen)\b""") to Capability.BACKGROUND_EXECUTION,
     )
     private val UI = Regex("""\bmf\s*\.\s*ui\b""")
 
@@ -207,6 +212,9 @@ object LocalModules {
         Capability.FILE_SANDBOXED,
         Capability.BACKGROUND_EXECUTION,
         Capability.NOTIFICATIONS,
+        Capability.LAUNCH_APPS,
+        Capability.CAMERA,
+        Capability.SCREEN_CONTROL,
     )
 
     fun isLocal(moduleId: String): Boolean = moduleId.startsWith(ID_PREFIX)

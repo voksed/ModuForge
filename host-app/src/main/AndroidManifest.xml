@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Used only to open connections on behalf of modules holding NETWORK_OUTBOUND. Sandboxes have no network. -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- The camera service of modules that hold the camera capability; Android asks the user separately. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
+
+    <!--
+        Listing the apps a module with the app capability may launch. A <queries> list cannot say "all apps";
+        the listing is the point of the capability, and this build is distributed outside Google Play.
+    -->
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <!-- Handing a downloaded update of the app itself to the system installer. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -79,6 +93,20 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Lets modules with the screen capability touch the screen; works only while the user keeps it on. -->
+        <service
+            android:name=".device.ModuForgeAccessibilityService"
+            android:exported="true"
+            android:label="@string/accessibility_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
 
         <service
             android:name=".runtime.ModuleHostService"

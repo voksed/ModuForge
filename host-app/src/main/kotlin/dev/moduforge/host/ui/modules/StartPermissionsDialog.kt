@@ -52,6 +52,14 @@ fun StartPermissionsDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(stringResource(R.string.start_permissions_hint), style = MaterialTheme.typography.bodySmall)
+                // Above the list, so that it stays in sight however long the descriptions are.
+                TextButton(onClick = { selected = if (selected.size == missing.size) emptySet() else missing.toSet() }) {
+                    Text(
+                        stringResource(
+                            if (selected.size == missing.size) R.string.start_permissions_none else R.string.start_permissions_all,
+                        ),
+                    )
+                }
                 missing.forEach { capability ->
                     val on = capability in selected
                     Row(
@@ -78,13 +86,6 @@ fun StartPermissionsDialog(
                         }
                         Switch(checked = on, onCheckedChange = null)
                     }
-                }
-                TextButton(onClick = { selected = if (selected.size == missing.size) emptySet() else missing.toSet() }) {
-                    Text(
-                        stringResource(
-                            if (selected.size == missing.size) R.string.start_permissions_none else R.string.start_permissions_all,
-                        ),
-                    )
                 }
             }
         },

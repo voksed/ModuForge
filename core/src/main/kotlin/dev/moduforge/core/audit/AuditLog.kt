@@ -22,6 +22,9 @@ enum class AuditEventType {
     TARGET_AUTHORIZED,
     NETWORK_CONNECTED,
     NETWORK_REFUSED,
+
+    /** A module used the camera, the screen or the apps of the device. */
+    DEVICE_CALL,
 }
 
 /**

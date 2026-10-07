@@ -1,4 +1,5 @@
 [versions]
+camerax = "1.5.1"
 agp = "9.4.1"
 kotlin = "2.4.20"
 ksp = "2.3.12"
@@ -16,6 +17,10 @@ serialization = "1.11.0"
 junit = "4.13.2"
 
 [libraries]
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version = "1.4.1" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }

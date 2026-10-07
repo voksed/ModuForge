@@ -132,6 +132,13 @@
     <string name="sensitivity_normal">Normal</string>
     <string name="sensitivity_sensitive">Sensitive</string>
     <string name="sensitivity_intrusive">Intrusive</string>
+    <string name="sensitivity_device_control">Controls the device</string>
+    <string name="cap_launch_apps">Launch apps</string>
+    <string name="cap_launch_apps_desc">See which apps are installed, open them and open links in them.</string>
+    <string name="cap_camera">Camera</string>
+    <string name="cap_camera_desc">Take photos with the cameras of this device. Android shows its camera indicator while a photo is taken, and every photo is recorded in the audit log.</string>
+    <string name="cap_screen_control">Control the screen</string>
+    <string name="cap_screen_control_desc">Touch the screen and read what is on it in every app: tap, swipe, type, press buttons by their text. It works through the accessibility service you turn on in the system settings, and stops when you turn it off. A notification shows while a module uses it.</string>
 
     <string name="consent_title">Allow “%1$s”?</string>
     <string name="consent_requester">%1$s (%2$s) is asking for this permission.</string>
@@ -162,6 +169,21 @@
 
     <string name="audit_network_connected">Connection opened</string>
     <string name="audit_network_refused">Connection refused</string>
+    <string name="audit_device_call">Used the device</string>
+    <string name="accessibility_label">ModuForge screen control</string>
+    <string name="accessibility_description">Lets modules that you allowed to control the screen touch it and read it. Turn it off at any time: modules lose that ability at once. ModuForge never uses it on its own.</string>
+    <string name="device_channel">Device use by modules</string>
+    <string name="device_using_camera">%1$s is using the camera</string>
+    <string name="device_using_screen">%1$s is controlling the screen</string>
+    <string name="device_title">Device control</string>
+    <string name="device_hint">For modules that use the camera, touch the screen or open apps. Each module needs its own permission; these switches are the system side of it.</string>
+    <string name="device_screen_on">Screen control is on.</string>
+    <string name="device_screen_off">Screen control is off: modules cannot touch or read the screen.</string>
+    <string name="device_screen_open">Open accessibility settings</string>
+    <string name="device_screen_restricted">If Android refuses to turn it on because the app is restricted: open the app info of ModuForge, press ⋮ and choose Allow restricted settings.</string>
+    <string name="device_camera_on">Camera access is allowed.</string>
+    <string name="device_camera_off">Camera access is not allowed yet.</string>
+    <string name="device_camera_allow">Allow camera</string>
 
     <string name="background_channel">Running modules</string>
     <plurals name="background_title">

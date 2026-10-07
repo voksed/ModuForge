@@ -22,6 +22,9 @@ val Capability.titleRes: Int
         Capability.BOT_GATEWAY -> R.string.cap_bot_gateway
         Capability.DEVICE_INFO -> R.string.cap_device_info
         Capability.LOCAL_NETWORK_SCAN -> R.string.cap_local_network_scan
+        Capability.LAUNCH_APPS -> R.string.cap_launch_apps
+        Capability.CAMERA -> R.string.cap_camera
+        Capability.SCREEN_CONTROL -> R.string.cap_screen_control
     }
 
 /** What the capability gives the module and why that matters. */
@@ -38,6 +41,9 @@ val Capability.descriptionRes: Int
         Capability.BOT_GATEWAY -> R.string.cap_bot_gateway_desc
         Capability.DEVICE_INFO -> R.string.cap_device_info_desc
         Capability.LOCAL_NETWORK_SCAN -> R.string.cap_local_network_scan_desc
+        Capability.LAUNCH_APPS -> R.string.cap_launch_apps_desc
+        Capability.CAMERA -> R.string.cap_camera_desc
+        Capability.SCREEN_CONTROL -> R.string.cap_screen_control_desc
     }
 
 @get:StringRes
@@ -46,6 +52,7 @@ val Sensitivity.labelRes: Int
         Sensitivity.NORMAL -> R.string.sensitivity_normal
         Sensitivity.SENSITIVE -> R.string.sensitivity_sensitive
         Sensitivity.INTRUSIVE -> R.string.sensitivity_intrusive
+        Sensitivity.DEVICE_CONTROL -> R.string.sensitivity_device_control
     }
 
 /** Name of the language a module is written in. */
@@ -87,4 +94,5 @@ val AuditEventType.labelRes: Int
         AuditEventType.TARGET_AUTHORIZED -> R.string.audit_target_authorized
         AuditEventType.NETWORK_CONNECTED -> R.string.audit_network_connected
         AuditEventType.NETWORK_REFUSED -> R.string.audit_network_refused
+        AuditEventType.DEVICE_CALL -> R.string.audit_device_call
     }

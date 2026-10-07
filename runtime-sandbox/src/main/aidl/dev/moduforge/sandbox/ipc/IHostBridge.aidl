@@ -43,6 +43,12 @@ interface IHostBridge {
     /** Asks the user a question. Success payload: the answer. Failure: the question was dismissed. */
     oneway void askUser(String question, boolean secret, IResultCallback callback);
 
+    /**
+     * A call to a device service (`apps`, `screen`, `camera`). Returns the JSON result. A missing grant is
+     * reported as SecurityException, any other failure as IllegalStateException with the reason.
+     */
+    String deviceCall(String service, String method, String argsJson);
+
     /** The module has nothing left to do and asks to be stopped. */
     oneway void stopSelf(String reason);
 }

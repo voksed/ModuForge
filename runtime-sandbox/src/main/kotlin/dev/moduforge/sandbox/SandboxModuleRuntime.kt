@@ -22,6 +22,7 @@ import dev.moduforge.sandbox.ipc.IHostBridge
 import dev.moduforge.sandbox.ipc.IResultCallback
 import dev.moduforge.sandbox.ipc.ISandbox
 import dev.moduforge.sdk.Capability
+import dev.moduforge.sdk.DeviceServiceCatalog
 import dev.moduforge.sdk.CapabilityRequest
 import dev.moduforge.sdk.CapabilityResult
 import dev.moduforge.core.module.ModuleUiSink
@@ -32,6 +33,8 @@ import dev.moduforge.sdk.ui.UiEvent
 import dev.moduforge.sdk.ui.UiNode
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.delay
 import dev.moduforge.sdk.CapabilityNotGrantedException
 import java.io.File
@@ -63,6 +66,7 @@ class SandboxModuleRuntime(
     private val notifier: ModuleNotifier,
     private val input: UserInputPrompter,
     private val scope: CoroutineScope,
+    private val devices: DeviceServices? = null,
 ) : ModuleRuntime {
 
     private val context = context.applicationContext
@@ -318,6 +322,23 @@ class SandboxModuleRuntime(
                 } catch (e: RemoteException) {
                     // The sandbox is gone; nobody is waiting for the answer.
                 }
+            }
+        }
+
+        override fun deviceCall(service: String, method: String, argsJson: String): String {
+            val offered = devices ?: throw IllegalStateException("this host offers no device services")
+            val capability = DeviceServiceCatalog.capabilityOf(service)
+                ?: throw IllegalStateException("there is no device service '$service'")
+            if (!sessions.containsKey(moduleId)) throw IllegalStateException("the module is not running")
+            if (!runBlocking { broker.isGranted(moduleId, capability) }) {
+                throw SecurityException("${capability.name} is not granted")
+            }
+            return try {
+                runBlocking { withTimeout(DEVICE_CALL_TIMEOUT_MILLIS) { offered.call(moduleId, moduleName, service, method, argsJson) } }
+            } catch (e: DeviceCallException) {
+                throw IllegalStateException(e.message)
+            } catch (e: TimeoutCancellationException) {
+                throw IllegalStateException("the device did not answer in time")
             }
         }
 

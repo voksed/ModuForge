@@ -155,6 +155,20 @@ internal class LuaScriptModule(private val files: Map<String, ByteArray>, privat
             },
         ))
 
+        DeviceApi.services.forEach { (service, calls) ->
+            mf.set(service, table(*calls.map { call ->
+                call.name to fn { args ->
+                    val first = args.arg1()
+                    val named = if (args.narg() == 1 && first.istable() && call.params.isNotEmpty()) {
+                        LuaValues.toGeneric(first) as? Map<*, *> ?: emptyMap<String, Any?>()
+                    } else {
+                        DeviceApi.named(call, (1..args.narg()).map { LuaValues.toGeneric(args.arg(it)) })
+                    }
+                    LuaValues.fromGeneric(host.device(service, call.name, named.entries.associate { it.key.toString() to it.value }))
+                }
+            }.toTypedArray()))
+        }
+
         globals.set("mf", mf)
         globals.set("os", table(
             "time" to fn { LuaValue.valueOf(host.time().toLong().toDouble()) },

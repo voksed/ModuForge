@@ -21,6 +21,7 @@ import dev.moduforge.host.runtime.ModuleLogs
 import dev.moduforge.sandbox.KeystoreStorageCipher
 import dev.moduforge.sandbox.ModuleInstaller
 import dev.moduforge.sandbox.ModuleNetworkRelay
+import dev.moduforge.host.device.HostDeviceServices
 import dev.moduforge.sandbox.ModuleStorage
 import dev.moduforge.sandbox.ModulePackageStore
 import dev.moduforge.sandbox.SandboxModuleRuntime
@@ -86,7 +87,8 @@ object HostModule {
         notifier: ModuleNotifier,
         input: UserInputPrompter,
         scope: CoroutineScope,
-    ): ModuleRuntime = SandboxModuleRuntime(context, packages, broker, logs, ui, network, storage, notifier, input, scope)
+        devices: HostDeviceServices,
+    ): ModuleRuntime = SandboxModuleRuntime(context, packages, broker, logs, ui, network, storage, notifier, input, scope, devices)
 
     @Provides
     @Singleton

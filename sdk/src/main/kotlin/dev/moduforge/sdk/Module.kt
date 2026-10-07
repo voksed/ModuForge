@@ -49,6 +49,9 @@ public interface ModuleContext {
 
     public val prompt: UserPrompt
 
+    /** Camera, screen and apps of the device; see [DeviceGateway]. */
+    public val device: DeviceGateway get() = NoDeviceServices
+
     /**
      * Asks the host to stop this module, as if the user had pressed stop. Use it when the
      * module has nothing left to do.

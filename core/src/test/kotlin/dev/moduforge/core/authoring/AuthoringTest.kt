@@ -101,4 +101,13 @@ class AuthoringTest {
         assertEquals("mf.log('x')", entries["code/main.lua"])
         assertEquals(manifest, (ModuleManifests.parse(entries.getValue("moduforge.json")) as dev.moduforge.sdk.ManifestResult.Valid).manifest)
     }
+
+    @Test
+    fun `device calls declare their capability and the background work they need`() {
+        val camera = ScriptAnalyzer.detectPermissions("mf.camera.photo('a.jpg')", dev.moduforge.sdk.ModuleRuntimeKind.LUA)
+        assertEquals(setOf(Capability.CAMERA), camera)
+        val screen = ScriptAnalyzer.detectPermissions("mf.apps.launch('x');\nmf.screen.tap(1, 2);", dev.moduforge.sdk.ModuleRuntimeKind.JS)
+        assertEquals(setOf(Capability.LAUNCH_APPS, Capability.SCREEN_CONTROL, Capability.BACKGROUND_EXECUTION), screen)
+        assertEquals(emptySet<Capability>(), ScriptAnalyzer.detectPermissions("-- mf.screen.tap(1, 2)", dev.moduforge.sdk.ModuleRuntimeKind.LUA))
+    }
 }

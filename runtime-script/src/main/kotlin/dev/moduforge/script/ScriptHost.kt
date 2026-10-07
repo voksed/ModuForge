@@ -230,6 +230,13 @@ internal class ScriptHost(val context: ModuleContext, private val locale: Locale
 
     fun ask(question: String, secret: Boolean): String? = runBlocking { context.prompt.ask(question, secret) }
 
+    /**
+     * A call to a device service. [arguments] is a map by parameter name; the result is a plain
+     * value (map, list, string, number, boolean) or null.
+     */
+    fun device(service: String, method: String, arguments: Map<String, Any?>): Any? =
+        DeviceApi.decode(guarded { context.device.call(service, method, DeviceApi.encode(arguments)) })
+
     // --- encodings, hashes ------------------------------------------------------------------
 
     fun urlencode(text: String): String = URLEncoder.encode(text, "UTF-8").replace("+", "%20")

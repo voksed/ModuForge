@@ -90,6 +90,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             onCheckOnStartChange = viewModel.updates::setCheckOnStart,
         )
         HorizontalDivider()
+        DeviceSection()
+        HorizontalDivider()
         val developer by viewModel.developer.state.collectAsStateWithLifecycle()
         DeveloperSection(
             state = developer,

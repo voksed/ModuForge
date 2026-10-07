@@ -440,6 +440,65 @@ class ScriptApiTest {
     }
 
     @Test
+    fun `device services are called by position or by name and answer with plain values in Lua`() {
+        val host = runScript(
+            LUA,
+            """
+            local apps = mf.apps.list()
+            mf.log("app=" .. apps[1].package .. " " .. apps[1].name)
+            mf.log("info=" .. mf.screen.info().width .. "x" .. mf.screen.info().height)
+            mf.screen.tap(100, 200)
+            mf.screen.tap{ x = 5, y = 6, ms = 80 }
+            mf.screen.swipe(1, 2, 3, 4)
+            mf.camera.photo{ path = "a.jpg", lens = "front" }
+            mf.apps.launch("Example")
+            local ok, err = mf.screen.back()
+            mf.log("back=" .. tostring(ok) .. " " .. tostring(err))
+            """,
+        )
+        assertEquals(
+            listOf("app=com.example.app Example", "info=1080x2400", "back=nil accessibility service is off"),
+            host.output.take(3),
+        )
+        assertEquals(
+            listOf(
+                "apps.list {}", "screen.info {}", "screen.info {}",
+                """screen.tap {"x":100.0,"y":200.0}""", """screen.tap {"ms":80.0,"x":5.0,"y":6.0}""",
+                """screen.swipe {"x1":1.0,"x2":3.0,"y1":2.0,"y2":4.0}""",
+                """camera.photo {"lens":"front","path":"a.jpg"}""", """apps.launch {"app":"Example"}""", "screen.back {}",
+            ),
+            host.deviceCalls.toList(),
+        )
+    }
+
+    @Test
+    fun `device services are called by position or by name and fail with an Error in JavaScript`() {
+        val host = runScript(
+            JS,
+            """
+            var apps = mf.apps.list();
+            mf.log("app=" + apps[0].package + " " + apps[0].name);
+            var info = mf.screen.info();
+            mf.log("info=" + info.width + "x" + info.height);
+            mf.screen.tap(100, 200);
+            mf.screen.tap({ x: 5, y: 6, ms: 80 });
+            mf.camera.photo({ path: "a.jpg" });
+            mf.apps.open("https://example.org");
+            try { mf.screen.back(); } catch (e) { mf.log("back: " + e.message); }
+            """,
+            FakeHost(),
+        )
+        assertEquals(listOf("app=com.example.app Example", "info=1080x2400", "back: accessibility service is off"), host.output)
+        assertEquals(
+            listOf(
+                "apps.list {}", "screen.info {}", """screen.tap {"x":100.0,"y":200.0}""", """screen.tap {"ms":80.0,"x":5.0,"y":6.0}""",
+                """camera.photo {"path":"a.jpg"}""", """apps.open {"url":"https://example.org"}""", "screen.back {}",
+            ),
+            host.deviceCalls.toList(),
+        )
+    }
+
+    @Test
     fun `JavaScript modules load package files and bundled libraries`() {
         val host = runScript(
             JS,

@@ -94,6 +94,18 @@ class FakeHost(
         override suspend fun delete(path: String) = files.remove(path) != null
         override suspend fun list() = files.keys.sorted()
     }
+    val deviceCalls = CopyOnWriteArrayList<String>()
+    override val device = object : dev.moduforge.sdk.DeviceGateway {
+        override suspend fun call(service: String, method: String, argsJson: String): String {
+            deviceCalls += "$service.$method $argsJson"
+            if (service == "screen" && method == "back") throw IOException("accessibility service is off")
+            return when ("$service.$method") {
+                "apps.list" -> """[{"package":"com.example.app","name":"Example"}]"""
+                "screen.info" -> """{"width":1080,"height":2400,"package":"com.example.app"}"""
+                else -> """{"ok":true}"""
+            }
+        }
+    }
     override val notifications = object : NotificationGateway {
         override suspend fun notify(title: String, text: String) { lines += "NOTIFY $title|$text" }
     }

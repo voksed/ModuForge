@@ -137,6 +137,19 @@ private class JsBinding(
                 "wait" to fn { args -> toJs(host.uiNext(optNumber(args, 0))) },
             ),
         )
+        DeviceApi.services.forEach { (service, calls) ->
+            ScriptableObject.putProperty(mf, service, obj(*calls.map { call ->
+                call.name to fn { args ->
+                    val first = args.firstOrNull()
+                    val named: Map<String, Any?> = if (args.size == 1 && call.params.isNotEmpty() && first is Scriptable && first !is NativeArray && first !is Function) {
+                        (toGeneric(first) as? Map<*, *>).orEmpty().entries.associate { it.key.toString() to it.value }
+                    } else {
+                        DeviceApi.named(call, args.map { toGeneric(it) })
+                    }
+                    toJs(host.device(service, call.name, named))
+                }
+            }.toTypedArray()))
+        }
         ScriptableObject.putProperty(scope, "mf", mf)
         ScriptableObject.putProperty(scope, "console", obj("log" to log, "info" to log, "warn" to log, "error" to log))
         ScriptableObject.putProperty(scope, "require", require(baseDir = ""))

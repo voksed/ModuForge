@@ -12,6 +12,9 @@ public enum class Sensitivity {
 
     /** Acts against third-party systems; each target needs a separate authorization confirmation. */
     INTRUSIVE,
+
+    /** Operates the device itself: its camera, its screen, its apps. Always visible to the user while in use. */
+    DEVICE_CONTROL,
 }
 
 /**
@@ -49,6 +52,18 @@ public enum class Capability(public val sensitivity: Sensitivity) {
 
     /** Probing hosts on the local network. Requires per-target authorization. */
     LOCAL_NETWORK_SCAN(Sensitivity.INTRUSIVE),
+
+    /** Listing, launching and opening links in the apps installed on the device. */
+    LAUNCH_APPS(Sensitivity.DEVICE_CONTROL),
+
+    /** Taking photos with the device's cameras. */
+    CAMERA(Sensitivity.DEVICE_CONTROL),
+
+    /**
+     * Touching the screen and reading what is on it in every app, through the system accessibility
+     * service the user turns on: taps, swipes, typing, finding and pressing buttons by their text.
+     */
+    SCREEN_CONTROL(Sensitivity.DEVICE_CONTROL),
     ;
 
     /** True when every request must name a target the user confirms being authorized to test. */

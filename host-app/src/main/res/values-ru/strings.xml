@@ -126,6 +126,13 @@
     <string name="sensitivity_normal">Обычное</string>
     <string name="sensitivity_sensitive">Чувствительное</string>
     <string name="sensitivity_intrusive">Интрузивное</string>
+    <string name="sensitivity_device_control">Управляет устройством</string>
+    <string name="cap_launch_apps">Запуск приложений</string>
+    <string name="cap_launch_apps_desc">Видеть, какие приложения установлены, открывать их и открывать в них ссылки.</string>
+    <string name="cap_camera">Камера</string>
+    <string name="cap_camera_desc">Делать фотографии камерами этого устройства. Пока снимается кадр, Android показывает индикатор камеры, а каждый снимок записывается в журнал аудита.</string>
+    <string name="cap_screen_control">Управление экраном</string>
+    <string name="cap_screen_control_desc">Касаться экрана и читать, что на нём, в любых приложениях: нажимать, смахивать, вводить текст, нажимать кнопки по их надписи. Работает через службу специальных возможностей, которую вы включаете в настройках системы, и прекращается, когда вы её выключаете. Пока модуль ею пользуется, показывается уведомление.</string>
 
     <string name="consent_title">Разрешить «%1$s»?</string>
     <string name="consent_requester">%1$s (%2$s) запрашивает это разрешение.</string>
@@ -156,6 +163,21 @@
 
     <string name="audit_network_connected">Соединение открыто</string>
     <string name="audit_network_refused">В соединении отказано</string>
+    <string name="audit_device_call">Использовано устройство</string>
+    <string name="accessibility_label">Управление экраном ModuForge</string>
+    <string name="accessibility_description">Позволяет модулям, которым вы разрешили управлять экраном, касаться его и читать. Выключите в любой момент: модули сразу теряют эту возможность. Сам ModuForge её без вас не использует.</string>
+    <string name="device_channel">Использование устройства модулями</string>
+    <string name="device_using_camera">%1$s использует камеру</string>
+    <string name="device_using_screen">%1$s управляет экраном</string>
+    <string name="device_title">Управление устройством</string>
+    <string name="device_hint">Для модулей, которые используют камеру, касаются экрана или открывают приложения. У каждого модуля свои разрешения; эти переключатели — системная сторона.</string>
+    <string name="device_screen_on">Управление экраном включено.</string>
+    <string name="device_screen_off">Управление экраном выключено: модули не могут касаться экрана и читать его.</string>
+    <string name="device_screen_open">Открыть настройки специальных возможностей</string>
+    <string name="device_screen_restricted">Если Android не даёт включить, потому что приложение ограничено: откройте «О приложении» ModuForge, нажмите ⋮ и выберите «Разрешить ограниченные настройки».</string>
+    <string name="device_camera_on">Доступ к камере разрешён.</string>
+    <string name="device_camera_off">Доступ к камере ещё не разрешён.</string>
+    <string name="device_camera_allow">Разрешить камеру</string>
 
     <string name="background_channel">Работающие модули</string>
     <plurals name="background_title">

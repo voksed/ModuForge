@@ -17,6 +17,8 @@ import dev.moduforge.sdk.Capability
 import dev.moduforge.sdk.CapabilityNotGrantedException
 import dev.moduforge.sdk.Connection
 import dev.moduforge.sdk.NetworkGateway
+import dev.moduforge.sdk.DeviceGateway
+import dev.moduforge.sdk.DeviceServiceCatalog
 import dev.moduforge.sdk.NotificationGateway
 import dev.moduforge.sdk.StorageGateway
 import dev.moduforge.sdk.UserPrompt
@@ -318,6 +320,18 @@ internal class BridgeModuleContext(
                 }
                 bridge.askUser(question, secret, callback)
             }
+    }
+
+    override val device = object : DeviceGateway {
+        override suspend fun call(service: String, method: String, argsJson: String): String = withContext(Dispatchers.IO) {
+            try {
+                bridge.deviceCall(service, method, argsJson)
+            } catch (e: SecurityException) {
+                throw CapabilityNotGrantedException(DeviceServiceCatalog.capabilityOf(service) ?: Capability.DEVICE_INFO)
+            } catch (e: IllegalStateException) {
+                throw IOException(e.message)
+            }
+        }
     }
 
     override val notifications = object : NotificationGateway {

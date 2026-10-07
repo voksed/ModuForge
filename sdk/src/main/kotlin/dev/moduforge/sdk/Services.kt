@@ -28,6 +28,47 @@ public interface NetworkGateway {
     public suspend fun connect(host: String, port: Int, tls: Boolean = false): Connection
 }
 
+/**
+ * Services of the device itself, reached by name: `apps`, `screen` and `camera`. Each needs its own
+ * capability ([Capability.LAUNCH_APPS], [Capability.SCREEN_CONTROL], [Capability.CAMERA]); every call is
+ * audited and, while a module uses the camera or the screen, the host shows that it does.
+ *
+ * Arguments and results are JSON texts so that the set of calls can grow without changing this interface.
+ * The calls themselves are described in the script API reference.
+ */
+public interface DeviceGateway {
+    /**
+     * @param service `apps`, `screen` or `camera`.
+     * @param method name of the call within the service.
+     * @param argsJson JSON object with the arguments.
+     * @return JSON text of the result.
+     * @throws CapabilityNotGrantedException when the capability of the service is not granted.
+     * @throws java.io.IOException when the call fails: no such service, the device cannot do it, the user has not enabled it.
+     */
+    public suspend fun call(service: String, method: String, argsJson: String = "{}"): String
+}
+
+/** The device services by name and the capability each one needs. */
+public object DeviceServiceCatalog {
+    public const val APPS: String = "apps"
+    public const val SCREEN: String = "screen"
+    public const val CAMERA: String = "camera"
+
+    /** Capability that opens [service], or null when there is no such service. */
+    public fun capabilityOf(service: String): Capability? = when (service) {
+        APPS -> Capability.LAUNCH_APPS
+        SCREEN -> Capability.SCREEN_CONTROL
+        CAMERA -> Capability.CAMERA
+        else -> null
+    }
+}
+
+/** What [ModuleContext.device] is on a host that offers no device services. */
+public object NoDeviceServices : DeviceGateway {
+    override suspend fun call(service: String, method: String, argsJson: String): String =
+        throw java.io.IOException("this host offers no device services")
+}
+
 /** Questions the module puts to the user through a dialog drawn by the host. */
 public interface UserPrompt {
     /**
