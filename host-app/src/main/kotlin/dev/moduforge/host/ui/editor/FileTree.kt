@@ -52,20 +52,21 @@ internal fun FileTreePanel(
 ) {
     Column(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                stringResource(R.string.editor_files),
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.weight(1f).combinedClickable(onClick = onRoot),
-            )
-            TextButton(onClick = onNewFile, contentPadding = TIGHT) { Text("+" + stringResource(R.string.editor_file_short)) }
-            TextButton(onClick = onNewFolder, contentPadding = TIGHT) { Text("+" + stringResource(R.string.editor_folder_short)) }
+            TextButton(onClick = onNewFile, contentPadding = TIGHT, modifier = Modifier.weight(1f)) {
+                Text("+" + stringResource(R.string.editor_file_short), style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            }
+            TextButton(onClick = onNewFolder, contentPadding = TIGHT, modifier = Modifier.weight(1f)) {
+                Text("+" + stringResource(R.string.editor_folder_short), style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            }
         }
+        // Tapping the line with the current folder makes the module root the place for new things.
         Text(
             stringResource(R.string.editor_in_folder, folder.ifEmpty { stringResource(R.string.editor_root) }),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().combinedClickable(onClick = onRoot).padding(vertical = 4.dp),
         )
         LazyColumn(Modifier.fillMaxWidth()) {
             items(rows, key = { (if (it.isFolder) "d:" else "f:") + it.path }) { row ->

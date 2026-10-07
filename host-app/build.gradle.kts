@@ -41,8 +41,10 @@ android {
         debug {
             // Lets a development build live next to an installed release, whose signature differs.
             applicationIdSuffix = ".debug"
+            manifestPlaceholders["appLabel"] = "ModuForge Dev"
         }
         release {
+            manifestPlaceholders["appLabel"] = "@string/app_name"
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
         }
