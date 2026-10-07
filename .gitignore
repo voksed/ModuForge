@@ -19,3 +19,4 @@ dist/
 
 # IDE build output
 bin/
+.mfrg-run/

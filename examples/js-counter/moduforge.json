@@ -1,0 +1,13 @@
+{
+  "id": "dev.moduforge.examples.jscounter",
+  "name": "Counter",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "runtime": "js",
+  "entry": "main.js",
+  "author": "ModuForge",
+  "description": "A counter with plus and minus buttons shown on the module's screen. Shows how a script draws an interface and reacts to it.",
+  "ui": "compose",
+  "permissions": ["FILE_SANDBOXED"],
+  "permissionReasons": { "FILE_SANDBOXED": "Remembers the count between starts." }
+}

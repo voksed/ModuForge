@@ -1,0 +1,17 @@
+{
+  "id": "dev.moduforge.examples.jsweather",
+  "name": "Weather notifier",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "runtime": "js",
+  "entry": "main.js",
+  "author": "ModuForge",
+  "description": "Every half hour fetches the current temperature for a city from wttr.in and posts a notification when it changes by a degree or more. The city is asked once and can be changed on the module's screen.",
+  "permissions": ["NETWORK_OUTBOUND", "FILE_SANDBOXED", "NOTIFICATIONS", "BACKGROUND_EXECUTION"],
+  "permissionReasons": {
+    "NETWORK_OUTBOUND": "Asks wttr.in for the weather.",
+    "FILE_SANDBOXED": "Keeps the city and the last temperature.",
+    "NOTIFICATIONS": "Tells you when the temperature changes.",
+    "BACKGROUND_EXECUTION": "Keeps checking while the app is not on screen."
+  }
+}
