@@ -20,6 +20,7 @@ import dev.moduforge.sandbox.PackageInspection
 import dev.moduforge.sandbox.SandboxModuleRuntime
 import dev.moduforge.core.authoring.LocalModules
 import dev.moduforge.core.module.StopRequest
+import dev.moduforge.sdk.ModuleRuntimeKind
 import dev.moduforge.sdk.Capability
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -30,6 +31,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -216,6 +218,46 @@ class PackageImportTest {
             assertTrue("a package must not replace it", installer.inspect { signed.inputStream() } is PackageInspection.Rejected)
         } finally {
             runtime.kill(id)
+        }
+    }
+
+    @Test
+    fun javaScriptModuleWithSeveralFilesRunsInTheSandbox() = runBlocking {
+        val id = "local.jsnote"
+        val files = mapOf(
+            "main.js" to """
+                var util = require("./lib/util");
+                var config = require("mf/config");
+                var minutes = config.get("minutes", { label: "Minutes", default: 30 });
+                const [first, second] = [1, 2]; const rest = new Set([first, second, 2]);
+                mf.log("JS sum=" + util.double(21) + " minutes=" + minutes + " rest=" + rest.size);
+                mf.log("JS date=" + (mf.date("%Y").length === 4) + " hash=" + mf.hash.sha256("abc").substring(0, 8));
+                mf.log("JS escape=" + typeof java + "/" + typeof Packages + "/" + typeof process);
+                try { mf.http({ url: "https://example.com/" }); } catch (e) { mf.log("JS http=" + e.message); }
+                mf.log("JS done");
+            """.trimIndent(),
+            "lib/util.js" to "exports.double = function (n) { return n * 2; };",
+        )
+        try {
+            val manifest = LocalModules.manifest(id, "Js note", files.getValue("main.js"), emptySet(), previous = null, runtime = ModuleRuntimeKind.JS)
+            assertEquals("main.js", manifest.entry)
+            assertTrue(installer.saveLocal(manifest, files) is InstallResult.Installed)
+            assertEquals(files, installer.readLocalFiles(id))
+            assertTrue(manager.setEnabled(id, true))
+            assertTrue("start failed: ${audit.events().map { "${it.type} ${it.detail}" }}", manager.start(id))
+
+            val report = (withTimeoutOrNull(30_000) {
+                logs.observe(id).first { lines -> lines.any { it.message == "JS done" || it.message.startsWith("script failed") } }
+            } ?: logs.observe(id).first()).map { it.message }
+            assertTrue(report.toString() + audit.events().map { "${it.type} ${it.detail}" }, "JS done" in report)
+            assertTrue(report.toString(), "JS sum=42 minutes=30 rest=2" in report)
+            assertTrue(report.toString(), "JS date=true hash=ba7816bf" in report)
+            assertTrue(report.toString(), "JS escape=undefined/undefined/undefined" in report)
+            // Network was not declared by a script that only mentions it inside a try: it is declared, but not granted.
+            assertTrue(report.toString(), report.any { it.startsWith("JS http=") })
+        } finally {
+            runtime.kill(id)
+            registry.delete(id)
         }
     }
 
