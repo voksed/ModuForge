@@ -38,6 +38,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Lets a development build live next to an installed release, whose signature differs.
+            applicationIdSuffix = ".debug"
+        }
         release {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")

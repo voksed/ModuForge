@@ -70,6 +70,8 @@ class SandboxIsolationTest {
 
     @Before
     fun installProbe() = runBlocking {
+        // Output is kept on disk between runs; a test must only see its own.
+        File(context.filesDir, "module-logs").deleteRecursively()
         storage.deleteRecursively()
         val result = installer.installTrusted { instrumentation.context.assets.open("modules/sandbox-probe.apk") }
         assertTrue("probe was not installed: $result", result is InstallResult.Installed)
@@ -99,7 +101,10 @@ class SandboxIsolationTest {
             }
         assertTrue(report.toString(), report.any { it.startsWith("PROBE undeclared-capability=") && "NOT_DECLARED" in it })
         assertTrue(grants.all().isEmpty())
-        assertTrue(audit.events().any { it.type == AuditEventType.CAPABILITY_DENIED && it.capability == Capability.NETWORK_OUTBOUND })
+        assertTrue(
+            "no denial of NETWORK_OUTBOUND in ${audit.events().map { "${it.type} ${it.capability} ${it.detail}" }}",
+            audit.events().any { it.type == AuditEventType.CAPABILITY_DENIED && it.capability == Capability.NETWORK_OUTBOUND },
+        )
     }
 
     @Test
@@ -130,7 +135,8 @@ class SandboxIsolationTest {
     private fun sandboxProcesses(): List<String> {
         val descriptor = instrumentation.uiAutomation.executeShellCommand("ps -A -o PID,NAME")
         return ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().use { it.readLines() }
-            .filter { "${context.packageName}:sandbox:" in it && ":$probeId.s" in it }
+            // The system cuts long process names, so the instance suffix may be missing; the module id is enough.
+            .filter { "${context.packageName}:sandbox:" in it && probeId in it }
     }
 }
 

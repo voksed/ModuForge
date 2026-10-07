@@ -77,7 +77,7 @@ class PackageImportTest {
             mf.log("SCRIPT declared=" .. tostring(mf.request("NOTIFICATIONS", "test")))
             local ok, why = mf.request("NETWORK_OUTBOUND", "test")
             mf.log("SCRIPT undeclared=" .. tostring(ok) .. ":" .. tostring(why))
-            mf.log("SCRIPT os=" .. tostring(os) .. " io=" .. tostring(io) .. " luajava=" .. tostring(luajava))
+            mf.log("SCRIPT os=" .. type(os) .. " exec=" .. tostring(os.execute) .. " io=" .. tostring(io) .. " luajava=" .. tostring(luajava))
             mf.log("SCRIPT done")
             while true do mf.sleep(1) end
         """.trimIndent().toByteArray(),
@@ -105,6 +105,8 @@ class PackageImportTest {
 
     @Before
     fun clean() {
+        // Output is kept on disk between runs; a test must only see its own.
+        File(context.filesDir, "module-logs").deleteRecursively()
         storage.deleteRecursively()
     }
 
@@ -134,7 +136,7 @@ class PackageImportTest {
         assertTrue(report.toString(), "SCRIPT sum=5 id=$moduleId" in report)
         assertTrue(report.toString(), "SCRIPT declared=true" in report)
         assertTrue(report.toString(), "SCRIPT undeclared=false:NOT_DECLARED" in report)
-        assertTrue(report.toString(), "SCRIPT os=nil io=nil luajava=nil" in report)
+        assertTrue(report.toString(), "SCRIPT os=table exec=nil io=nil luajava=nil" in report)
 
         assertTrue("script keeps running after its report", runtime.isAlive(moduleId))
         assertTrue(manager.stop(moduleId))

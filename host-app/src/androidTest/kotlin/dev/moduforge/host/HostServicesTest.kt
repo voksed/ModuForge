@@ -118,6 +118,8 @@ class HostServicesTest {
 
     @Before
     fun clean() {
+        // Output is kept on disk between runs; a test must only see its own.
+        File(context.filesDir, "module-logs").deleteRecursively()
         storage.deleteRecursively()
     }
 
