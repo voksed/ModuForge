@@ -41,6 +41,8 @@
     <string name="editor_permissions_button">Разрешения (%1$d)</string>
     <string name="editor_done">Готово</string>
     <string name="editor_run">Запустить</string>
+    <string name="editor_blocked_name">Дайте модулю имя, чтобы сохранить и запустить его.</string>
+    <string name="editor_blocked_entry">Главный файл %1$s модуля на языке %2$s пуст, запускать нечего. Напишите код в %1$s (откройте его в списке файлов) или создайте модуль заново на языке вашего кода.</string>
     <string name="editor_stop">Остановить</string>
     <string name="editor_open_module">Модуль ›</string>
     <string name="terminal_title">Терминал</string>

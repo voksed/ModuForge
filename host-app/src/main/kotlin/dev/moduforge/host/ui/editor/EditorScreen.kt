@@ -181,7 +181,7 @@ class EditorViewModel @Inject constructor(
             _state.value = EditorState(
                 loading = false,
                 moduleId = record?.id,
-                name = record?.manifest?.name ?: draft?.name.orEmpty(),
+                name = record?.manifest?.name ?: draft?.name?.takeIf { it.isNotBlank() } ?: DEFAULT_NAME,
                 runtime = runtime,
                 files = files,
                 folder = ProjectFiles.folderOf(ProjectFiles.Tree(files), current),
@@ -351,6 +351,7 @@ class EditorViewModel @Inject constructor(
         const val ARG_TEMPLATE = "template"
         const val ARG_FILE = "file"
         const val ARG_LINE = "line"
+        const val DEFAULT_NAME = "My module"
     }
 }
 
@@ -418,6 +419,18 @@ fun EditorScreen(onOpenModule: (String) -> Unit, viewModel: EditorViewModel = hi
                 state.moduleId?.let { id ->
                     TextButton(onClick = { onOpenModule(id) }) { Text(stringResource(R.string.editor_open_module)) }
                 }
+            }
+            // A greyed-out button must say why.
+            if (!ready && !state.saving) {
+                Text(
+                    if (state.name.isBlank()) {
+                        stringResource(R.string.editor_blocked_name)
+                    } else {
+                        stringResource(R.string.editor_blocked_entry, state.entry, stringResource(state.runtime.languageRes))
+                    },
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
             state.problem?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
 

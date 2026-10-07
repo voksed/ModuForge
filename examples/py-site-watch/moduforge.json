@@ -1,0 +1,17 @@
+{
+  "id": "dev.moduforge.examples.pysitewatch",
+  "name": "Site watch",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "runtime": "python",
+  "entry": "main.py",
+  "author": "ModuForge",
+  "description": "Checks your sites every few minutes, shows which are up and how fast they answer, and posts a notification when one goes down or comes back. The list of sites and the interval are asked once and can be changed on the module's screen.",
+  "permissions": ["NETWORK_OUTBOUND", "FILE_SANDBOXED", "NOTIFICATIONS", "BACKGROUND_EXECUTION"],
+  "permissionReasons": {
+    "NETWORK_OUTBOUND": "Opens the addresses you listed, and only those.",
+    "FILE_SANDBOXED": "Keeps the last state of each site to notice a change.",
+    "NOTIFICATIONS": "Tells you when a site goes down or comes back.",
+    "BACKGROUND_EXECUTION": "Keeps checking while the app is not on screen."
+  }
+}

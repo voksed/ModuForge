@@ -47,6 +47,8 @@
     <string name="editor_permissions_button">Permissions (%1$d)</string>
     <string name="editor_done">Done</string>
     <string name="editor_run">Run</string>
+    <string name="editor_blocked_name">Give the module a name to save and run it.</string>
+    <string name="editor_blocked_entry">The main file %1$s of a %2$s module is empty, so there is nothing to run. Write the code in %1$s (open it in the file list), or create the module again in the language of your code.</string>
     <string name="editor_stop">Stop</string>
     <string name="editor_open_module">Module ›</string>
     <string name="terminal_title">Terminal</string>
