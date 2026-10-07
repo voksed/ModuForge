@@ -22,15 +22,28 @@ No computer, no manifest, no signature.
 2. Name the module and edit the code.
 3. Press **Save and run**. Confirm the permissions on the first start.
 
-The editor:
+The editor is laid out like a small IDE:
 
-- colours the code and numbers the lines;
-- has a row of **snippets** above the code — `http`, `storage`, `config`, `telegram`, `ui`
-  and others; a tap inserts a working call at the cursor;
-- **Add file** creates further files of the module (`lib/util.lua`), loaded from the main
-  script with `require`;
-- when the module stopped with an error, its screen shows **Open main.lua, line 12** — the
-  editor opens with the cursor on that line.
+- **Files** on the left: a tree of the module's folders and files. Tap a file to open it and
+  a folder to open or close it; the selected folder is where **+file** and **+folder** make
+  new things. A long press on a row opens a menu: make a file or a folder inside, **rename
+  or move** (type the full path, e.g. `lib/util.lua`), **delete** (a folder goes with
+  everything in it). The entry script cannot be renamed or deleted. The **Files** button
+  hides the tree to give the code the whole width.
+- The **code** on the right: coloured, with line numbers, and a row of **snippets** above it
+  — `http`, `storage`, `config`, `telegram`, `ui` and others; a tap inserts a working call at
+  the cursor.
+- The **terminal** below: what the module writes while it runs, live, with its state in the
+  header. **Run** saves the module, starts it and shows the output there; **Stop** stops it.
+  A line that names a place in the code (`main.lua:12`) is a link — tap it and the editor
+  opens that file on that line. Tap the header to make the terminal taller or fold it away;
+  it also folds away by itself while the keyboard is open.
+- Other files are loaded from the main script with `require`: `require("lib.util")` in Lua,
+  `require("./lib/util")` in JavaScript.
+- A folder with no file in it is kept only while the editor is open: save puts files, and a
+  folder exists through the files inside it.
+- **Permissions** in the top row opens what the module may ask for; what the code uses is
+  switched on by itself.
 
 What the app does for you:
 

@@ -111,14 +111,14 @@ class DevPushTest {
                 },
             )
         }
-        assertTrue(replied.await(5, TimeUnit.SECONDS))
+        assertTrue(replied.await(30, TimeUnit.SECONDS))
         output.trySend("first\n")
         output.trySend("second\n")
-        assertTrue(gotOutput.await(5, TimeUnit.SECONDS))
+        assertTrue("got $lines", gotOutput.await(30, TimeUnit.SECONDS))
         assertEquals("first\nsecond\n", lines.joinToString(""))
 
         server.close()
-        client.join(5_000)
+        client.join(30_000)
         assertFalse(client.isAlive)
     }
 

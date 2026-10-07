@@ -25,8 +25,8 @@ is not signed at all, is refused before this screen appears.
 
 **Create module** opens an editor: pick the language (Lua or JavaScript) and a starting
 point, name the module, edit the code and press **Save and run**. The editor colours the
-code, numbers the lines, inserts ready calls from the row of snippets and lets a module
-consist of several files. Details are in [Writing modules](writing-modules.md).
+code, numbers the lines, inserts ready calls from the row of snippets, shows a tree of
+folders and files on the left and a terminal with the live output of the module below. Details are in [Writing modules](writing-modules.md).
 
 A `.lua` or `.js` file is imported with the same button as a package. It is not installed right
 away; it opens in the editor, so you see the code and decide whether to save it as a

@@ -20,22 +20,42 @@
     <string name="template_empty">Empty script</string>
     <string name="editor_title">Editor</string>
     <string name="editor_name">Module name</string>
-    <string name="editor_code">Code (%1$s)</string>
     <string name="language_lua" translatable="false">Lua</string>
     <string name="language_js" translatable="false">JavaScript</string>
     <string name="language_python" translatable="false">Python</string>
     <string name="language_kotlin" translatable="false">Kotlin</string>
     <string name="editor_permissions">Permissions the module may ask for</string>
     <string name="editor_permissions_hint">What the code uses is switched on automatically. You still confirm permissions when the module first starts.</string>
-    <string name="editor_save_run">Save and run</string>
     <string name="editor_save">Save</string>
+    <string name="editor_files">Files</string>
+    <string name="editor_file_short">file</string>
+    <string name="editor_folder_short">folder</string>
+    <string name="editor_add_folder">Add folder</string>
+    <string name="editor_folder_name">Folder name</string>
+    <string name="editor_folder_hint">Letters, digits and _ . - are allowed. Nested folders: lib/net</string>
+    <string name="editor_folder_invalid">Use Latin letters, digits and _ . - and a name that is not taken.</string>
+    <string name="editor_rename">Rename or move</string>
+    <string name="editor_new_path">New path</string>
+    <string name="editor_rename_hint">Full path from the module root, e.g. lib/util.lua. Changing the folders moves the file.</string>
+    <string name="editor_rename_invalid">That path cannot be used: it is taken, invalid, or it would move a folder into itself.</string>
+    <string name="editor_delete">Delete</string>
+    <string name="editor_delete_title">Delete %1$s?</string>
+    <string name="editor_delete_file_body">The file is removed from the module when you save.</string>
+    <string name="editor_delete_folder_body">The folder and the %1$d files in it are removed from the module when you save.</string>
+    <string name="editor_in_folder">in %1$s</string>
+    <string name="editor_root">module root</string>
+    <string name="editor_permissions_button">Permissions (%1$d)</string>
+    <string name="editor_done">Done</string>
+    <string name="editor_run">Run</string>
+    <string name="editor_stop">Stop</string>
+    <string name="editor_open_module">Module ›</string>
+    <string name="terminal_title">Terminal</string>
+    <string name="terminal_empty">Press Run: what the module writes appears here. A line with a file and a line number opens that place in the code.</string>
     <string name="editor_add_file">Add file</string>
     <string name="editor_file_name">File name (.%1$s)</string>
     <string name="editor_file_hint">Other files of the module, loaded from the main script with require. Folders are allowed: lib/util.%1$s</string>
     <string name="editor_file_invalid">Use Latin letters, digits and _ . - with the .%1$s extension, and a name that is not taken.</string>
-    <string name="editor_delete_file">Delete %1$s</string>
     <string name="module_open_error">Open %1$s, line %2$d</string>
-    <string name="editor_hint">A running module is stopped and restarted with the new code. Its files and granted permissions are kept.</string>
     <string name="module_edit">Edit code</string>
     <string name="module_settings_header">Settings</string>
     <string name="module_settings_hint">A running module is restarted to pick a change up.</string>

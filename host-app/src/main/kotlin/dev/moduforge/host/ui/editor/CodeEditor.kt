@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.moduforge.sdk.ModuleRuntimeKind
@@ -148,6 +149,7 @@ fun CodeEditor(
     onValueChange: (TextFieldValue) -> Unit,
     runtime: ModuleRuntimeKind,
     modifier: Modifier = Modifier,
+    minHeight: Dp = 280.dp,
 ) {
     val colors = MaterialTheme.colorScheme
     val style = TextStyle(fontFamily = FontFamily.Monospace, fontSize = 14.sp, lineHeight = 20.sp, color = colors.onSurface)
@@ -173,7 +175,7 @@ fun CodeEditor(
             visualTransformation = highlighter,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.None, autoCorrectEnabled = false),
             onTextLayout = { layout = it },
-            modifier = Modifier.weight(1f).heightIn(min = 280.dp).padding(end = 8.dp),
+            modifier = Modifier.weight(1f).heightIn(min = minHeight).padding(end = 8.dp),
         )
     }
 }

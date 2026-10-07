@@ -205,14 +205,7 @@ fun ModuForgeApp(
                     },
                 ),
             ) {
-                EditorScreen(
-                    onSaved = { saved ->
-                        // Back to the list, then to the module, so that "back" from it leads to the list.
-                        navController.navigate(moduleRoute(saved.moduleId, saved.startRequested)) {
-                            popUpTo(ROUTE_MODULES)
-                        }
-                    },
-                )
+                EditorScreen(onOpenModule = { id -> navController.navigate(moduleRoute(id)) })
             }
             composable(ROUTE_AUDIT) { AuditScreen() }
             composable(ROUTE_SETTINGS) { SettingsScreen() }

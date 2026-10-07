@@ -478,9 +478,14 @@ private const val VISIBLE_LOG_LINES = 100
 
 private val SOURCE_LOCATION = Regex("""([\w./@+-]+\.(?:lua|js)):(\d+)""")
 
+/** File and line a message points at (`main.lua:12`), or null when it names no place in the code. */
+internal fun sourceLocation(message: String): Pair<String, Int>? {
+    val match = SOURCE_LOCATION.find(message) ?: return null
+    return match.groupValues[1].removePrefix("@") to match.groupValues[2].toInt()
+}
+
 /** File and line named by the most recent error in the output, when the last run ended with one. */
 internal fun errorLocation(log: List<ModuleLogLine>): Pair<String, Int>? {
     val lastError = log.lastOrNull { it.level == ModuleLogSink.Level.ERROR } ?: return null
-    val match = SOURCE_LOCATION.find(lastError.message) ?: return null
-    return match.groupValues[1].removePrefix("@") to match.groupValues[2].toInt()
+    return sourceLocation(lastError.message)
 }
