@@ -1,6 +1,6 @@
 # Writing modules
 
-A module is a script — in **Lua** or **JavaScript** — plus a short description of what it
+A module is a script — in **Lua**, **JavaScript** or **Python** — plus a short description of what it
 needs. There are three ways to write one, from the lightest to the most complete:
 
 | Way | You need | Good for |
@@ -9,7 +9,7 @@ needs. There are three ways to write one, from the lightest to the most complete
 | [A script on a computer](#on-a-computer) | The `mfrg` tool | Comfortable editing and debugging |
 | [A signed package](#a-package-for-other-people) | The `mfrg` tool | Giving the module to other people |
 
-The API is the same everywhere: [Lua](lua-api.md), [JavaScript](js-api.md). Ready-made
+The API is the same everywhere: [Lua](lua-api.md), [JavaScript](js-api.md), [Python](python-api.md). Ready-made
 pieces for common tasks are in the [cookbook](cookbook.md). Compiled modules are covered
 in [Kotlin modules](kotlin-modules.md).
 
@@ -144,6 +144,7 @@ Loading other files:
 |---|---|---|
 | Lua | `require("lib.util")` | `lib/util.lua` |
 | JavaScript | `require("./lib/util")` | `lib/util.js`, relative to the current file |
+| Python | `from lib import util` | `lib/util.py`; a folder with an `__init__.py` is a package |
 
 ## A package for other people
 
@@ -194,7 +195,7 @@ itself checks that the package is signed by you. Nobody has to compare fingerpri
 | `name` | yes | Shown to the user, 1–64 characters |
 | `version` | yes | [Semantic version](https://semver.org), e.g. `1.4.0` |
 | `sdkRange` | yes | Versions of the module API you support. Use `>=1.0.0 <2.0.0` |
-| `runtime` | no | `lua`, `js` or `dex` (compiled). Default `dex`. `python` is reserved and rejected at installation |
+| `runtime` | no | `lua`, `js`, `python` or `dex` (compiled). Default `dex` |
 | `entry` | yes | For scripts: path of the main script inside the folder. For `dex`: class name |
 | `permissions` | no | What the module may be granted. Anything not listed is refused without asking the user |
 | `permissionReasons` | no | Your explanation of each permission, shown to the user. Up to 300 characters each; keys must be listed in `permissions` |

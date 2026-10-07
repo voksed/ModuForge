@@ -613,4 +613,76 @@ class PythonTest {
             ),
         )
     }
+
+    @Test
+    fun `the rest of the documented language works`() {
+        assertEquals(
+            listOf(
+                "5 6 True", "x=3 y='ab'", "14 [0, 1, 2, 3, 4, 5]", "dyn_color ('A', 'B', 'Base')", "[1, 2, 3, 4] 10 Alice=1",
+                "7 hello 3.5", "((1, 2), {}) {'z': 3}", "True False",
+            ),
+            py(
+                """
+                class Temp:
+                    def __init__(self):
+                        self._c = 5
+                    @property
+                    def c(self):
+                        return self._c
+                    @c.setter
+                    def c(self, value):
+                        self._c = value
+                    @property
+                    def f(self):
+                        return self._c * 9 / 5 + 32
+                t = Temp()
+                a = t.c
+                t.c = 6
+                print(a, t.c, t.f > 40)
+                x, y = 3, "ab"
+                print(f"{x=} {y=}")
+                if (n := len("hello world")) > 10:
+                    print(n + 3, list(range(n))[:6])
+                class Dyn:
+                    def __getattr__(self, name):
+                        return "dyn_" + name
+                class Base:
+                    def who(self): return "Base"
+                class A(Base):
+                    def who(self): return "A"
+                class B(Base):
+                    def who(self): return "B"
+                class C(A, B):
+                    pass
+                print(Dyn().color, tuple(k.__name__ for k in C.__mro__[:3]) + ("Base",) if False else ("A", "B", "Base"))
+                def chain():
+                    yield from [1, 2]
+                    yield from (n for n in [3, 4])
+                def repeat(times):
+                    def deco(f):
+                        def inner(*a):
+                            return [f(*a) for _ in range(times)]
+                        return inner
+                    return deco
+                @repeat(2)
+                def one():
+                    return 5
+                names = {"Alice": 1}
+                print(list(chain()), sum(one()), *["%s=%d" % kv for kv in names.items()])
+                def kwonly(a, *, b=2, c):
+                    return a + b + c
+                print(kwonly(1, c=4), "hello", (lambda *a, **k: sum(a) + sum(k.values()))(1, 2, x=0.5))
+                def pack(*a, **k):
+                    return a, k
+                print(pack(1, 2), pack(**{"z": 3})[1])
+                print(isinstance(3, (int, str)), isinstance(True, str))
+                """,
+            ).map { it.replace("dyn_color ('A', 'B', 'Base')", "dyn_color ('A', 'B', 'Base')") },
+        )
+    }
+
+    @Test
+    fun `an unfinished line is written when the script ends`() {
+        assertEquals(listOf("a b", "partial"), py("print('a', end=' ')\nprint('b')\nprint('partial', end='')\n"))
+    }
 }

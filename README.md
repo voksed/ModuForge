@@ -29,7 +29,8 @@ bot:run()
 - **Signed packages.** Modules come as `.mfrg` files. Before installing you see who
   signed the package, what it says about itself and everything it can ever ask for.
 - **Audit log.** Every installation, start, permission decision and network connection.
-- **Lua and JavaScript.** The same API in both, with libraries for Telegram bots,
+- **Lua, JavaScript and Python.** The same API in all three (Python is an interpreter built
+  into the app, a large part of Python 3 rather than CPython), with libraries for Telegram bots,
   settings and schedules; HTTP, raw connections, WebSocket, hashes, dates, a simple UI.
 - **Scenarios with the phone.** `mf.apps`, `mf.screen`, `mf.camera`: open apps, press buttons
   in them, run an autoclicker, react to what appears on the screen, take photos. Each is its
@@ -46,7 +47,7 @@ bot:run()
   the author instead of the user comparing fingerprints.
 - **Themes.** Light, dark, wallpaper or custom colours, palettes, corner shapes, text size.
 
-Not there yet: a Python runtime, a module catalogue, a Google Play release
+Not there yet: a module catalogue, a Google Play release
 (Play does not allow apps that run downloaded code; ModuForge is distributed as an APK).
 
 ## Getting started
@@ -54,7 +55,7 @@ Not there yet: a Python runtime, a module catalogue, a Google Play release
 | You want to | Go to |
 |---|---|
 | Use the app | [User guide](docs/en/user-guide.md) |
-| Write a module | [Writing modules](docs/en/writing-modules.md), [cookbook](docs/en/cookbook.md), [Lua API](docs/en/lua-api.md), [JavaScript API](docs/en/js-api.md) |
+| Write a module | [Writing modules](docs/en/writing-modules.md), [cookbook](docs/en/cookbook.md), [Lua API](docs/en/lua-api.md), [JavaScript API](docs/en/js-api.md), [Python API](docs/en/python-api.md) |
 | Build from source | [Building](docs/en/building.md) |
 | Know what a module can do | [Security model](docs/en/security.md) |
 
@@ -75,7 +76,7 @@ The rest of this file is a technical overview; the documentation above is the re
 |---|---|---|
 | `:sdk` | Kotlin/JVM, published as `dev.moduforge:moduforge-sdk` | Stable API modules compile against: `Module`, `ModuleContext`, `Capability`, manifest, semver, declarative UI |
 | `:core` | Kotlin/JVM | Host logic without Android dependencies: `PermissionBroker`, `ModuleManager`, `AuditLog`, `ModuleRuntime` contract |
-| `:runtime-script` | Kotlin/JVM | Lua and JavaScript runtimes and the script API, shared by the app and `mfrg run` |
+| `:runtime-script` | Kotlin/JVM | Lua, JavaScript and Python runtimes and the script API, shared by the app and `mfrg run` |
 | `:runtime-sandbox` | Android library | Isolated-process sandbox, AIDL protocol, module package store |
 | `:host-app` | Android application | Compose UI, Room storage, Hilt wiring, consent dialog |
 | `:tools:packer` | Kotlin/JVM CLI (`mfrg`) | Creates, runs, pushes and packs modules |
@@ -133,8 +134,7 @@ META-INF/MFRG.SIG   author's signature over everything else
 }
 ```
 
-`runtime` is `lua`, `js` or `dex`; `python` is reserved and rejected at installation
-until its runtime exists. For a script runtime `entry` is the main script:
+`runtime` is `lua`, `js`, `python` or `dex`. For a script runtime `entry` is the main script:
 it runs on its own thread from start until the module is stopped.
 
 ### Packing
@@ -164,7 +164,7 @@ publish the fingerprint where your users can compare it.
 ### Script API
 
 The table lists the core calls in their Lua form; the full references are
-[Lua API](docs/en/lua-api.md) and [JavaScript API](docs/en/js-api.md).
+[Lua API](docs/en/lua-api.md), [JavaScript API](docs/en/js-api.md) and [Python API](docs/en/python-api.md).
 
 | Call | Meaning |
 |---|---|
