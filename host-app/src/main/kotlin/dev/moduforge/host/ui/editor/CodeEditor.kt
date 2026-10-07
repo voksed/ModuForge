@@ -16,7 +16,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -33,11 +35,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.moduforge.sdk.ModuleRuntimeKind
 
+/** Token colours of the code editor, one set for dark and one for light surfaces. */
+internal class SyntaxPalette(val keyword: Color, val string: Color, val number: Color, val api: Color) {
+    companion object {
+        val DARK = SyntaxPalette(Color(0xFFC792EA), Color(0xFFA5D6A7), Color(0xFFFFAB70), Color(0xFF82B1FF))
+        val LIGHT = SyntaxPalette(Color(0xFF7B1FA2), Color(0xFF2E7D32), Color(0xFFC2410C), Color(0xFF1565C0))
+    }
+}
+
 /** Colours and token rules for one language. */
 internal class CodeHighlighter(private val runtime: ModuleRuntimeKind, private val colors: ColorScheme) : VisualTransformation {
 
     override fun filter(text: AnnotatedString): TransformedText =
         TransformedText(highlight(text.text), OffsetMapping.Identity)
+
+    // Fixed hues: a monochrome or wallpaper theme would otherwise leave every token the same colour.
+    private val palette = if (colors.surface.luminance() < 0.5f) SyntaxPalette.DARK else SyntaxPalette.LIGHT
 
     fun highlight(code: String): AnnotatedString {
         val builder = AnnotatedString.Builder(code)
@@ -47,10 +60,10 @@ internal class CodeHighlighter(private val runtime: ModuleRuntimeKind, private v
             val token = match.value
             val color = when {
                 match.groups[COMMENT] != null -> colors.outline
-                match.groups[STRING] != null -> colors.tertiary
-                match.groups[NUMBER] != null -> colors.secondary
-                token == "mf" -> colors.primary
-                token in keywords -> colors.primary
+                match.groups[STRING] != null -> palette.string
+                match.groups[NUMBER] != null -> palette.number
+                token == "mf" -> palette.api
+                token in keywords -> palette.keyword
                 else -> continue
             }
             builder.addStyle(SpanStyle(color = color), match.range.first, match.range.last + 1)

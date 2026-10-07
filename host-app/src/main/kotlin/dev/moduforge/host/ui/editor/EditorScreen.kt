@@ -236,7 +236,7 @@ fun EditorScreen(onSaved: (Saved) -> Unit, viewModel: EditorViewModel = hiltView
     // The field owns cursor and selection; it is rebuilt only when another file is opened.
     var field by remember(state.current) {
         val jump = state.jumpToLine?.let { TextRange(offsetOfLine(state.source, it)) }
-        mutableStateOf(TextFieldValue(state.source, jump ?: TextRange.Zero))
+        mutableStateOf(TextFieldValue(state.source, jump ?: TextRange(state.source.length)))
     }
     val focus = remember { FocusRequester() }
     LaunchedEffect(state.current, state.jumpToLine) {
