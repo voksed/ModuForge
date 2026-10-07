@@ -156,7 +156,14 @@ appears") or take photos. They ask for three separate permissions when they star
 described in plain words: **Launch apps**, **Control the screen**, **Camera**. Grant only
 what you understand and the module needs; the rest stays closed.
 
-**Settings → Device control** is the system side:
+**Settings → Device control** is the system side. ModuForge comes in two editions. The
+standard one (`ModuForge-<version>.apk`) installs on any phone but has no screen control. The
+full one (`ModuForge-<version>-full.apk`) adds it, and Google Play Protect may block installing
+it from a browser or a file manager ("blocked to protect the device"): it refuses any app from
+outside the store that offers an accessibility service. If that happens, install the standard
+edition, or install the full one from a computer with `adb install`. The app updates itself
+within its own edition.
+
 
 - **Screen control** works through the accessibility service of ModuForge. Press **Open
   accessibility settings**, find ModuForge, turn it on and confirm Android's warning. If
