@@ -73,7 +73,7 @@ private class Project(val manifest: ModuleManifest, val files: Map<String, ByteA
 /** A project directory with `moduforge.json`, or a single script with a manifest worked out from its code. */
 private fun loadProject(target: File): Project {
     if (target.isFile) {
-        val runtime = LocalModules.runtimeForFile(target.name) ?: throw UsageError("${target.name} is not a .lua or .js script")
+        val runtime = LocalModules.runtimeForFile(target.name) ?: throw UsageError("${target.name} is not a .lua, .js or .py script")
         val source = target.readText()
         val name = target.nameWithoutExtension
         val manifest = LocalModules.manifest(LocalModules.idFor(name) { false }, name, source, LocalModules.AVAILABLE.toSet(), null, runtime)
@@ -89,7 +89,7 @@ private fun loadProject(target: File): Project {
         return Project(manifest, neighbours + (manifest.entry to source.toByteArray()), folder)
     }
     val manifestFile = File(target, ModulePackageFormat.MANIFEST)
-    if (!manifestFile.isFile) throw UsageError("$manifestFile not found; pass a project directory or a .lua/.js file")
+    if (!manifestFile.isFile) throw UsageError("$manifestFile not found; pass a project directory or a .lua, .js or .py file")
     val manifest = when (val parsed = ModuleManifests.parse(manifestFile.readText())) {
         is ManifestResult.Valid -> parsed.manifest
         is ManifestResult.Invalid -> throw UsageError("invalid manifest: ${parsed.problems.joinToString("; ")}")

@@ -55,8 +55,11 @@ internal class CodeHighlighter(private val runtime: ModuleRuntimeKind, private v
 
     fun highlight(code: String): AnnotatedString {
         val builder = AnnotatedString.Builder(code)
-        val pattern = if (runtime == ModuleRuntimeKind.JS) JS_TOKENS else LUA_TOKENS
-        val keywords = if (runtime == ModuleRuntimeKind.JS) JS_KEYWORDS else LUA_KEYWORDS
+        val (pattern, keywords) = when (runtime) {
+            ModuleRuntimeKind.JS -> JS_TOKENS to JS_KEYWORDS
+            ModuleRuntimeKind.PYTHON -> PY_TOKENS to PY_KEYWORDS
+            else -> LUA_TOKENS to LUA_KEYWORDS
+        }
         for (match in pattern.findAll(code)) {
             val token = match.value
             val color = when {
@@ -85,6 +88,15 @@ internal class CodeHighlighter(private val runtime: ModuleRuntimeKind, private v
         val JS_TOKENS = Regex(
             """(/\*[\s\S]*?(?:\*/|$)|//[^\n]*)|("(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?|`(?:\\.|[^`\\])*`?)""" +
                 """|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_$][\w$]*\b)""",
+        )
+        val PY_TOKENS = Regex(
+            """(#[^\n]*)|("{3}[\s\S]*?(?:"{3}|$)|'{3}[\s\S]*?(?:'{3}|$)|[rRbBfFuU]{0,2}"(?:\\.|[^"\\\n])*"?|[rRbBfFuU]{0,2}'(?:\\.|[^'\\\n])*'?)""" +
+                """|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_]\w*\b)""",
+        )
+        val PY_KEYWORDS = setOf(
+            "False", "None", "True", "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", "except",
+            "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise",
+            "return", "try", "while", "with", "yield",
         )
         val LUA_KEYWORDS = setOf(
             "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "goto", "if", "in", "local",
@@ -183,7 +195,28 @@ fun CodeEditor(
 /** A ready call the author can drop into the code. */
 class Snippet(val label: String, val code: String)
 
-internal fun snippets(runtime: ModuleRuntimeKind): List<Snippet> = if (runtime == ModuleRuntimeKind.JS) {
+private val PYTHON_SNIPPETS = listOf(
+    Snippet("log", "mf.log(\"\")\n"),
+    Snippet("http", "response = mf.http(\"https://\")\nmf.log(str(response.status) + \" \" + response.body)\n"),
+    Snippet("json", "import json\ndata = json.loads(response.body)\n"),
+    Snippet("storage", "mf.storage.write(\"file.txt\", \"text\")\ntext = mf.storage.read(\"file.txt\")\n"),
+    Snippet("config", "from mf import config\nvalue = config.get(\"key\", ask=\"Question\")\n"),
+    Snippet("ask", "answer = mf.ask(\"Question\")\n"),
+    Snippet("notify", "mf.notify(\"Title\", \"Text\")\n"),
+    Snippet("schedule", "from mf import schedule\n\n\ndef task():\n    pass\n\n\nschedule.every(300, task)\nschedule.run()\n"),
+    Snippet("telegram", "from mf import telegram\nbot = telegram.bot()\n\n\n@bot.on(\"text\")\ndef echo(message):\n    bot.reply(message, message[\"text\"])\n\n\nbot.run()\n"),
+    Snippet("ui", "mf.ui.show([\n    {\"type\": \"text\", \"text\": \"Hello\"},\n    {\"type\": \"button\", \"id\": \"ok\", \"label\": \"OK\"},\n])\nevent = mf.ui.wait()\n"),
+    Snippet("date", "mf.date(\"%Y-%m-%d %H:%M\")"),
+    Snippet("sleep", "mf.sleep(1)\n"),
+    Snippet("try", "try:\n    pass\nexcept mf.Error as error:\n    mf.log(str(error))\n"),
+    Snippet("app", "mf.apps.launch(\"Calculator\")\nmf.screen.wait(\"7\", 8)\n"),
+    Snippet("tap", "mf.screen.tap(100, 200)\n"),
+    Snippet("click", "mf.screen.click(\"OK\")\n"),
+    Snippet("screen", "for item in mf.screen.texts():\n    mf.log(item[\"text\"] + \" \" + str(item[\"x\"]) + \",\" + str(item[\"y\"]))\n"),
+    Snippet("photo", "photo = mf.camera.photo(\"photo.jpg\", lens=\"back\")\nmf.log(str(photo[\"width\"]) + \"x\" + str(photo[\"height\"]))\n"),
+)
+
+internal fun snippets(runtime: ModuleRuntimeKind): List<Snippet> = if (runtime == ModuleRuntimeKind.PYTHON) PYTHON_SNIPPETS else if (runtime == ModuleRuntimeKind.JS) {
     listOf(
         Snippet("log", "mf.log(\"\");\n"),
         Snippet("http", "var response = mf.http({ url: \"https://\" });\nmf.log(response.status + \" \" + response.body);\n"),

@@ -476,7 +476,7 @@ private fun LogCard(lines: List<ModuleLogLine>, onShare: () -> Unit, onClear: ()
 
 private const val VISIBLE_LOG_LINES = 100
 
-private val SOURCE_LOCATION = Regex("""([\w./@+-]+\.(?:lua|js)):(\d+)""")
+private val SOURCE_LOCATION = Regex("""([\w./@+-]+\.(?:lua|js|py)):(\d+)""")
 
 /** File and line a message points at (`main.lua:12`), or null when it names no place in the code. */
 internal fun sourceLocation(message: String): Pair<String, Int>? {

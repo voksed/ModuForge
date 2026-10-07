@@ -47,13 +47,29 @@ class AuthoringTest {
     }
 
     @Test
+    fun `Python is analysed with its own comment and import syntax`() {
+        val python = dev.moduforge.sdk.ModuleRuntimeKind.PYTHON
+        assertEquals(
+            setOf(Capability.NETWORK_OUTBOUND, Capability.FILE_SANDBOXED),
+            ScriptAnalyzer.detectPermissions("from mf import telegram\nbot = telegram.bot()", python),
+        )
+        assertEquals(setOf(Capability.FILE_SANDBOXED), ScriptAnalyzer.detectPermissions("import mf.config as c", python))
+        assertEquals(setOf(Capability.FILE_SANDBOXED), ScriptAnalyzer.detectPermissions("from mf import config, schedule", python))
+        assertEquals(setOf(Capability.NOTIFICATIONS), ScriptAnalyzer.detectPermissions("mf.notify('x')  # mf.http('https://a')", python))
+        assertEquals(emptySet<Capability>(), ScriptAnalyzer.detectPermissions("# mf.http('x')\nprint('mf.storage')[:0]", python).minus(setOf(Capability.FILE_SANDBOXED)))
+        assertTrue(ScriptAnalyzer.usesInterface("mf.ui.show([])", python))
+        assertEquals(dev.moduforge.sdk.ModuleRuntimeKind.PYTHON, LocalModules.runtimeForFile("bot.py"))
+        assertEquals("main.py", LocalModules.entryFor(python))
+    }
+
+    @Test
     fun `calls inside comments do not count`() {
         assertEquals(emptySet<Capability>(), ScriptAnalyzer.detectPermissions("-- mf.http{}\nmf.log('x') -- mf.notify"))
     }
 
     @Test
     fun `every template declares what its script uses and yields a valid manifest`() {
-        assertEquals(6, ModuleTemplates.ALL.map { it.key }.toSet().size)
+        assertEquals(9, ModuleTemplates.ALL.map { it.key }.toSet().size)
         ModuleTemplates.ALL.forEach { template ->
             val detected = ScriptAnalyzer.detectPermissions(template.script, template.runtime)
             assertTrue("${template.key}: $detected", template.permissions.keys.containsAll(detected))

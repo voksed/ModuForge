@@ -56,7 +56,7 @@
     <string name="module_setting_unset">Не задано</string>
     <string name="module_setting_change">Изменить</string>
     <string name="module_setting_empty_hint">Оставьте пустым, чтобы удалить значение: модуль спросит его снова или возьмёт значение по умолчанию.</string>
-    <string name="import_button">Импортировать файл (.mfrg, .lua или .js)</string>
+    <string name="import_button">Импортировать файл (.mfrg, .lua, .js или .py)</string>
     <string name="import_hint">Пакет проверяется и показывается вам. Скрипт открывается в редакторе, где виден весь код до того, как он станет модулем.</string>
     <string name="import_rejected">Не установлено</string>
     <string name="import_title">Установить «%1$s»?</string>

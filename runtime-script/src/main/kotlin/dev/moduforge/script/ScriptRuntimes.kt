@@ -7,7 +7,7 @@ import dev.moduforge.sdk.ModuleRuntimeKind
 object ScriptRuntimes {
 
     /** Script languages this build can execute. */
-    val SUPPORTED: Set<ModuleRuntimeKind> = setOf(ModuleRuntimeKind.LUA, ModuleRuntimeKind.JS)
+    val SUPPORTED: Set<ModuleRuntimeKind> = setOf(ModuleRuntimeKind.LUA, ModuleRuntimeKind.JS, ModuleRuntimeKind.PYTHON)
 
     /**
      * @param files module code by path relative to the package's `code/` directory.
@@ -17,6 +17,7 @@ object ScriptRuntimes {
     fun create(kind: ModuleRuntimeKind, files: Map<String, ByteArray>, entry: String): Module = when (kind) {
         ModuleRuntimeKind.LUA -> LuaScriptModule(files, entry)
         ModuleRuntimeKind.JS -> JsScriptModule(files, entry)
+        ModuleRuntimeKind.PYTHON -> PythonScriptModule(files, entry)
         else -> throw IllegalArgumentException("runtime ${kind.name.lowercase()} is not a supported script runtime")
     }
 }

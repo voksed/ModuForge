@@ -69,6 +69,29 @@ class RunnerTest {
     }
 
     @Test
+    fun `a Python module runs on the computer with its project files and reports errors with the line`() {
+        val dir = project(
+            "python", "main.py", "\"FILE_SANDBOXED\", \"NOTIFICATIONS\"",
+            """
+            import mf
+            from lib import util
+            from mf import config
+            name = config.get("name", ask="Name?")
+            mf.log("hello " + name + " " + str(util.double(21)))
+            mf.notify("done")
+            """,
+        )
+        File(dir, "lib").mkdirs()
+        File(dir, "lib/__init__.py").writeText("")
+        File(dir, "lib/util.py").writeText("def double(n):\n    return n * 2\n")
+        assertEquals(listOf("[question] Name?", "hello Ann 42", "[notification] done"), execute(dir.path, answers = listOf("Ann")).filter { !it.startsWith("script finished") })
+
+        val failing = temp.newFile("bad.py").apply { writeText("print('a')\n\nprint(1 / 0)\n") }
+        val error = assertThrows(UsageError::class.java) { execute(failing.path) }
+        assertTrue(error.message, "ZeroDivisionError: division by zero (bad.py:3)" in error.message.orEmpty() || "main.py:3" in error.message.orEmpty())
+    }
+
+    @Test
     fun `a single script finds the scripts next to it`() {
         val dir = temp.newFolder()
         File(dir, "lib").mkdirs()

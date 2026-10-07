@@ -132,7 +132,11 @@ fun runScript(
     host: FakeHost = FakeHost(),
     extraFiles: Map<String, String> = emptyMap(),
 ): FakeHost {
-    val entry = if (kind == ModuleRuntimeKind.JS) "main.js" else "main.lua"
+    val entry = when (kind) {
+        ModuleRuntimeKind.JS -> "main.js"
+        ModuleRuntimeKind.PYTHON -> "main.py"
+        else -> "main.lua"
+    }
     val files = extraFiles.mapValues { it.value.toByteArray() } + (entry to script.trimIndent().toByteArray())
     val module = ScriptRuntimes.create(kind, files, entry)
     runBlocking { module.onStart(host) }

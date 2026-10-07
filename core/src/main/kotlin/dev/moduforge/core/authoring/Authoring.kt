@@ -159,6 +159,68 @@ object ModuleTemplates {
             mf.log("hello from " + mf.name);
             """.trimIndent() + "\n",
         ),
+        ModuleTemplate(
+            "py-telegram", TELEGRAM, "Telegram bot", ModuleRuntimeKind.PYTHON, telegramPermissions,
+            """
+            # Telegram bot. The token is asked for on the first start and kept in module storage.
+            import mf
+            from mf import telegram
+
+            bot = telegram.bot()
+
+
+            @bot.command("start")
+            def start(message, args):
+                bot.reply(message, "Hello! Send me any text.")
+
+
+            @bot.on("text")
+            def echo(message):
+                bot.reply(message, message["text"])
+
+
+            try:
+                bot.run()
+            except mf.Error as error:
+                mf.log("bot stopped: " + str(error))
+            """.trimIndent() + "\n",
+        ),
+        ModuleTemplate(
+            "py-watcher", WATCHER, "Watcher: checks a web page on a schedule and notifies about changes",
+            ModuleRuntimeKind.PYTHON, watcherPermissions,
+            """
+            # Checks a page every few minutes and notifies when its content changes.
+            import mf
+            from mf import config, schedule
+
+            url = config.get("url", ask="Address of the page to watch (https://...)")
+            if not url:
+                mf.log("nothing to watch")
+            else:
+                def check():
+                    try:
+                        response = mf.http(url)
+                    except mf.Error as error:
+                        mf.log("check failed: " + str(error))
+                        return
+                    previous = config.get("last")
+                    if previous and previous != response.body:
+                        mf.notify("Page changed", url)
+                    config.set("last", response.body)
+
+                schedule.every(300, check)
+                schedule.run()
+            """.trimIndent() + "\n",
+        ),
+        ModuleTemplate(
+            "py-empty", EMPTY, "Empty script", ModuleRuntimeKind.PYTHON, emptyMap(),
+            """
+            # Runs from top to bottom when the module starts.
+            import mf
+
+            mf.log("hello from " + mf.name)
+            """.trimIndent() + "\n",
+        ),
     )
 
     fun forRuntime(runtime: ModuleRuntimeKind): List<ModuleTemplate> = ALL.filter { it.runtime == runtime }
@@ -167,8 +229,8 @@ object ModuleTemplates {
 /** Works out what a script needs from the calls it makes, so authors do not have to declare it. */
 object ScriptAnalyzer {
     private val USES = listOf(
-        Regex("""\bmf\s*\.\s*(http|connect|websocket)\b|["']mf[./]telegram["']""") to Capability.NETWORK_OUTBOUND,
-        Regex("""\bmf\s*\.\s*storage\b|["']mf[./](config|telegram)["']""") to Capability.FILE_SANDBOXED,
+        Regex("""\bmf\s*\.\s*(http|connect|websocket)\b|["']mf[./]telegram["']|\bfrom\s+mf\s+import\b[^\n]*\btelegram\b|\bimport\s+mf\.telegram\b""") to Capability.NETWORK_OUTBOUND,
+        Regex("""\bmf\s*\.\s*storage\b|["']mf[./](config|telegram)["']|\bfrom\s+mf\s+import\b[^\n]*\b(config|telegram)\b|\bimport\s+mf\.(config|telegram)\b""") to Capability.FILE_SANDBOXED,
         Regex("""\bmf\s*\.\s*notify\b""") to Capability.NOTIFICATIONS,
         Regex("""\bmf\s*\.\s*apps\b""") to Capability.LAUNCH_APPS,
         Regex("""\bmf\s*\.\s*camera\b""") to Capability.CAMERA,
@@ -190,7 +252,11 @@ object ScriptAnalyzer {
 
     private fun code(source: String, runtime: ModuleRuntimeKind): String {
         // A URL inside a string contains "//"; only a comment marker at a token boundary counts.
-        val comment = if (runtime == ModuleRuntimeKind.JS) Regex("""(^|\s)//.*$""") else Regex("""--.*$""")
+        val comment = when (runtime) {
+            ModuleRuntimeKind.JS -> Regex("""(^|\s)//.*$""")
+            ModuleRuntimeKind.PYTHON -> Regex("""(^|\s)#.*$""")
+            else -> Regex("""--.*$""")
+        }
         return source.lineSequence().joinToString("\n") { it.replace(comment, "") }
     }
 }
@@ -204,7 +270,7 @@ object LocalModules {
     const val ID_PREFIX = "local."
 
     /** Languages a module can be written in on the device. */
-    val RUNTIMES = listOf(ModuleRuntimeKind.LUA, ModuleRuntimeKind.JS)
+    val RUNTIMES = listOf(ModuleRuntimeKind.LUA, ModuleRuntimeKind.JS, ModuleRuntimeKind.PYTHON)
 
     /** Capabilities a local module can usefully declare: those with a host service behind them. */
     val AVAILABLE = listOf(
@@ -220,12 +286,17 @@ object LocalModules {
     fun isLocal(moduleId: String): Boolean = moduleId.startsWith(ID_PREFIX)
 
     /** Name of the single script of a local module in [runtime]. */
-    fun entryFor(runtime: ModuleRuntimeKind): String = if (runtime == ModuleRuntimeKind.JS) "main.js" else "main.lua"
+    fun entryFor(runtime: ModuleRuntimeKind): String = when (runtime) {
+        ModuleRuntimeKind.JS -> "main.js"
+        ModuleRuntimeKind.PYTHON -> "main.py"
+        else -> "main.lua"
+    }
 
     /** Language of a script file by its name; null when the extension is not a script's. */
     fun runtimeForFile(fileName: String): ModuleRuntimeKind? = when (fileName.substringAfterLast('.', "").lowercase()) {
         "lua" -> ModuleRuntimeKind.LUA
         "js", "mjs" -> ModuleRuntimeKind.JS
+        "py" -> ModuleRuntimeKind.PYTHON
         else -> null
     }
 
