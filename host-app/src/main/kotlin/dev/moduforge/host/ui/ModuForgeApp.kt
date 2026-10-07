@@ -105,9 +105,8 @@ fun ModuForgeApp(
     NotificationPermission(wantsNotifications)
     val navController = rememberNavController()
     // A package or link opened from outside is reviewed on the module list, whatever screen was open.
-    val arrived = incoming.pending.collectAsStateWithLifecycle().value
-    LaunchedEffect(arrived) {
-        if (arrived != null) navController.popBackStack(ROUTE_MODULES, inclusive = false)
+    LaunchedEffect(incoming) {
+        incoming.arrivals.collect { navController.popBackStack(ROUTE_MODULES, inclusive = false) }
     }
     val snackbar = remember { SnackbarHostState() }
     val route = navController.currentBackStackEntryAsState().value?.destination?.route

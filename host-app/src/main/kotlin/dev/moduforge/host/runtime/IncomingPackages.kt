@@ -4,7 +4,9 @@ import android.content.Intent
 import android.net.Uri
 import dev.moduforge.core.authoring.InstallLink
 import dev.moduforge.core.authoring.InstallLinks
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import javax.inject.Inject
@@ -30,6 +32,11 @@ class IncomingPackages @Inject constructor() {
     /** The newest item not taken yet. */
     val pending: StateFlow<IncomingPackage?> = _pending
 
+    private val _arrivals = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Emits once per item offered, however quickly [pending] is taken. */
+    val arrivals: SharedFlow<Unit> = _arrivals
+
     /** Records what [intent] carries; other intents are ignored. */
     fun offer(intent: Intent?) {
         if (intent?.action != Intent.ACTION_VIEW) return
@@ -39,6 +46,7 @@ class IncomingPackages @Inject constructor() {
             "content", "file" -> IncomingPackage.File(data)
             else -> return
         }
+        _arrivals.tryEmit(Unit)
     }
 
     fun take(): IncomingPackage? = _pending.getAndUpdate { null }

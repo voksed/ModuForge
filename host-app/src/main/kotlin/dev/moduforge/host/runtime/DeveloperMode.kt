@@ -11,6 +11,7 @@ import dev.moduforge.core.module.ModuleLogSink
 import dev.moduforge.core.module.ModuleManager
 import dev.moduforge.core.module.ModuleRegistry
 import dev.moduforge.core.module.ModuleState
+import dev.moduforge.core.permission.PermissionBroker
 import dev.moduforge.sandbox.ModuleInstaller
 import dev.moduforge.sandbox.PackageInspection
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +54,7 @@ class DeveloperMode @Inject constructor(
     private val installer: ModuleInstaller,
     private val manager: ModuleManager,
     private val registry: ModuleRegistry,
+    private val broker: PermissionBroker,
     private val logs: ModuleLogs,
     private val scope: CoroutineScope,
 ) {
@@ -145,9 +147,19 @@ class DeveloperMode @Inject constructor(
             }
             is InstallResult.Installed -> {
                 if (registry.find(id)?.state == ModuleState.INSTALLED) manager.setEnabled(id, true)
-                val started = manager.start(id)
-                val outcome = if (started) "started" else "could not be started, see its screen in the app"
-                PushReply(true, "${inspected.manifest.name} ${inspected.manifest.version} installed, $outcome", id)
+                val name = "${inspected.manifest.name} ${inspected.manifest.version}"
+                // Permissions are granted on the phone only: the first push stops here, later ones keep the grants.
+                val missing = broker.grantableUpFront(id)
+                if (missing.isNotEmpty()) {
+                    return@withContext PushReply(
+                        true,
+                        "$name installed, not started: it needs ${missing.joinToString { it.name }}. " +
+                            "Open it in the app and press Start once to allow that; the next push starts it by itself.",
+                        id,
+                    )
+                }
+                val outcome = if (manager.start(id)) "started" else "could not be started, see its screen in the app"
+                PushReply(true, "$name installed, $outcome", id)
             }
         }
     }
