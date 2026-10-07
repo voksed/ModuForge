@@ -128,6 +128,8 @@ class ModuleDetailViewModel @Inject constructor(
     /** Starts the module, first offering the declared permissions it does not hold yet. */
     fun start() {
         viewModelScope.launch {
+            // Pressing Start is a clear intent: a freshly installed module is switched on by it.
+            if (state.value?.module?.state == ModuleState.INSTALLED) manager.setEnabled(moduleId, true)
             val missing = broker.grantableUpFront(moduleId)
             if (missing.isEmpty()) launchModule() else _startPrompt.value = missing
         }
@@ -402,7 +404,7 @@ private fun RunControls(state: ModuleState, busy: Boolean, onStart: () -> Unit, 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(stringResource(state.labelRes), style = MaterialTheme.typography.titleMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onStart, enabled = state == ModuleState.ENABLED && !busy) {
+            Button(onClick = onStart, enabled = (state == ModuleState.ENABLED || state == ModuleState.INSTALLED) && !busy) {
                 Text(stringResource(R.string.module_start))
             }
             OutlinedButton(onClick = onStop, enabled = state == ModuleState.RUNNING && !busy) {
