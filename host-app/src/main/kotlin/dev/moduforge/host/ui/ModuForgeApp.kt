@@ -42,6 +42,9 @@ import dev.moduforge.host.R
 import dev.moduforge.host.consent.ConsentCoordinator
 import dev.moduforge.host.consent.InputCoordinator
 import dev.moduforge.host.runtime.IncomingPackages
+import dev.moduforge.host.update.UpdateManager
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import dev.moduforge.host.ui.consent.InputDialog
 import dev.moduforge.host.ui.editor.EditorScreen
 import dev.moduforge.host.ui.editor.EditorViewModel
@@ -100,6 +103,7 @@ fun ModuForgeApp(
     consent: ConsentCoordinator,
     input: InputCoordinator,
     incoming: IncomingPackages,
+    updates: UpdateManager,
     wantsNotifications: StateFlow<Boolean>,
 ) {
     NotificationPermission(wantsNotifications)
@@ -213,6 +217,23 @@ fun ModuForgeApp(
             composable(ROUTE_AUDIT) { AuditScreen() }
             composable(ROUTE_SETTINGS) { SettingsScreen() }
         }
+    }
+
+    // An update found by the check the user switched on at startup is announced once.
+    val announced by updates.announced.collectAsStateWithLifecycle()
+    announced?.let { update ->
+        AlertDialog(
+            onDismissRequest = updates::dismissAnnouncement,
+            title = { Text(stringResource(R.string.update_available, update.version)) },
+            text = { Text(update.notes.ifBlank { stringResource(R.string.update_announce_body) }) },
+            confirmButton = {
+                TextButton(onClick = {
+                    updates.dismissAnnouncement()
+                    navController.navigate(ROUTE_SETTINGS) { launchSingleTop = true }
+                }) { Text(stringResource(R.string.update_open_settings)) }
+            },
+            dismissButton = { TextButton(onClick = updates::dismissAnnouncement) { Text(stringResource(R.string.update_later)) } },
+        )
     }
 
     val prompt by consent.pending.collectAsStateWithLifecycle()

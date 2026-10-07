@@ -186,8 +186,29 @@
     <string name="developer_command_wifi">Когда компьютер в той же сети, выполните в папке модуля:</string>
 
     <string name="settings_versions">Хост %1$s · SDK модулей %2$s</string>
+    <string name="update_title">Обновления</string>
+    <string name="update_current">Установлена версия %1$s</string>
+    <string name="update_check">Проверить обновления</string>
+    <string name="update_checking">Ищу новую версию…</string>
+    <string name="update_up_to_date">У вас последняя версия.</string>
+    <string name="update_available">Доступна версия %1$s</string>
+    <string name="update_size">Около %1$d МБ</string>
+    <string name="update_download">Скачать</string>
+    <string name="update_downloading">Скачивается версия %1$s…</string>
+    <string name="update_downloaded">Версия %1$s скачана</string>
+    <string name="update_downloaded_hint">Файл взят из релизов проекта на GitHub и подписан тем же ключом, что и это приложение. Android попросит подтвердить установку; модули и их данные сохранятся.</string>
+    <string name="update_install">Установить</string>
+    <string name="update_failed_network">Не удалось связаться с GitHub.</string>
+    <string name="update_failed_download">Скачать не удалось.</string>
+    <string name="update_failed_wrong_app">Скачанный файл — не сборка этого приложения с тем же ключом подписи, поэтому он не установлен.</string>
+    <string name="update_failed_not_allowed">Приложению ещё не разрешена установка.</string>
+    <string name="update_on_start">Проверять при запуске</string>
+    <string name="update_on_start_hint">По умолчанию выключено: приложение обращается к GitHub, только когда вы нажимаете кнопку. Если включить, оно один раз смотрит при каждом запуске и сообщает, если есть новое.</string>
+    <string name="update_announce_body">Доступна новая версия ModuForge.</string>
+    <string name="update_open_settings">К обновлениям</string>
+    <string name="update_later">Позже</string>
     <string name="settings_offline_title">Работает без сети</string>
-    <string name="settings_offline_body">Сам хост никогда не подключается к сети. Он открывает соединения только для модулей, которым вы выдали доступ в интернет, и записывает каждое в аудит-лог.</string>
+    <string name="settings_offline_body">Хост подключается к сети только для модулей, которым вы выдали доступ в интернет (каждое соединение записывается в аудит-лог), и к GitHub, когда вы проверяете обновление или открываете ссылку на установку.</string>
     <string name="settings_responsible_title">Ответственное использование</string>
     <string name="settings_responsible_body">ModuForge предназначен для авторизованного тестирования, обучения и автоматизации. Используйте модули только против систем, которые принадлежат вам или которые вам явно разрешено тестировать. Интрузивные разрешения требуют подтверждать авторизацию для каждой цели, и каждое подтверждение записывается в аудит-лог.</string>
 

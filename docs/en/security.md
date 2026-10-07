@@ -71,13 +71,28 @@ never installed silently: the script opens in the editor, where the user sees th
 saves it. They run in the same sandbox behind the same permissions, which are still asked
 for before the first start. An unsigned module and a signed one cannot replace each other.
 
+### Updates of the app
+
+The only other time the host itself connects to the network is for its own updates, and
+only when the user presses **Check for updates** or has switched on the check at startup
+(off by default). The check reads the public release description of the project on GitHub.
+An APK is offered only when its address is an HTTPS address on GitHub and the file is under
+200 MB; after the download the app verifies that it carries this app's package name and the
+same signing certificate as the installed copy, and only then hands it to the system
+installer, which makes the same check and asks the user to confirm.
+
+What this does not protect against: whoever controls the GitHub account and the signing key
+of the project can publish an update every user is offered. That is the trust placed in
+the author of any app that is not distributed through a store.
+
 ### Install links
 
 A `moduforge://install` link names an HTTPS address and, optionally, the fingerprint of the
 author's key. Opening one never installs anything by itself:
 
-- the app shows the address and downloads only after the user agrees — this is the one
-  case where the host itself connects to the network, and only then;
+- the app shows the address and downloads only after the user agrees — this is, with
+  app updates, one of the two cases where the host itself connects to the network, and
+  only then;
 - only `https://` addresses are accepted, and the file is limited to 64 MB;
 - the downloaded file goes through the same verification and the same review screen as a
   file picked by hand;

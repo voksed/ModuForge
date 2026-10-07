@@ -47,6 +47,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.moduforge.host.BuildConfig
 import dev.moduforge.host.R
 import dev.moduforge.host.runtime.DeveloperMode
+import dev.moduforge.host.update.UpdateManager
 import dev.moduforge.host.appearance.Appearance
 import dev.moduforge.host.appearance.AppearanceStore
 import dev.moduforge.host.appearance.CornerStyle
@@ -57,7 +58,11 @@ import dev.moduforge.sdk.ModuForgeSdk
 import javax.inject.Inject
 
 @HiltViewModel
-class SettingsViewModel @Inject constructor(private val store: AppearanceStore, val developer: DeveloperMode) : ViewModel() {
+class SettingsViewModel @Inject constructor(
+    private val store: AppearanceStore,
+    val developer: DeveloperMode,
+    val updates: UpdateManager,
+) : ViewModel() {
     val appearance = store.appearance
 
     fun update(change: (Appearance) -> Appearance) = store.update(change)
@@ -73,6 +78,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         AppearanceSection(appearance, viewModel::update, viewModel::reset)
+        HorizontalDivider()
+        val updateState by viewModel.updates.state.collectAsStateWithLifecycle()
+        val checkOnStart by viewModel.updates.checkOnStart.collectAsStateWithLifecycle()
+        UpdateSection(
+            state = updateState,
+            checkOnStart = checkOnStart,
+            onCheck = { viewModel.updates.check() },
+            onDownload = viewModel.updates::download,
+            onInstall = viewModel.updates::install,
+            onCheckOnStartChange = viewModel.updates::setCheckOnStart,
+        )
         HorizontalDivider()
         val developer by viewModel.developer.state.collectAsStateWithLifecycle()
         DeveloperSection(

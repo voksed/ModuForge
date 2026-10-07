@@ -4,6 +4,9 @@
     <!-- Used only to open connections on behalf of modules holding NETWORK_OUTBOUND. Sandboxes have no network. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Handing a downloaded update of the app itself to the system installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
     <!-- Keeping modules that hold BACKGROUND_EXECUTION alive, with a visible notification. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -65,6 +68,17 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Gives the system installer read access to the downloaded update, and to nothing else. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <service
             android:name=".runtime.ModuleHostService"

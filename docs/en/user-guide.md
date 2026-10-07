@@ -149,6 +149,22 @@ memory only and is lost when ModuForge restarts.
 
 **Reset appearance** returns everything to the defaults.
 
+## Updating the app
+
+**Settings → Updates → Check for updates** looks at the releases of the project on GitHub.
+When a newer version exists it shows what is new, and:
+
+1. **Download** fetches the APK from GitHub. The app checks that it is this very app, signed
+   with the same key as the installed one, and refuses anything else.
+2. **Install** hands the file to Android, which asks you to confirm. The first time, Android
+   also asks you to allow ModuForge to install apps — a switch on a system screen that opens
+   by itself; come back and press **Install** again.
+
+Your modules, their data and their permissions stay as they are.
+
+The app contacts GitHub only when you press the button. **Check when the app starts**
+(off by default) makes it look once at every start and tell you if something new is there.
+
 ## Developer mode
 
 For people who write modules on a computer. **Settings → For module developers →

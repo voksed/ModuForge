@@ -190,8 +190,29 @@
     <string name="developer_command_wifi">With the computer in the same network, run in the module folder:</string>
 
     <string name="settings_versions">Host %1$s · Module SDK %2$s</string>
+    <string name="update_title">Updates</string>
+    <string name="update_current">Installed version %1$s</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_checking">Looking for a newer version…</string>
+    <string name="update_up_to_date">You have the latest version.</string>
+    <string name="update_available">Version %1$s is available</string>
+    <string name="update_size">About %1$d MB</string>
+    <string name="update_download">Download</string>
+    <string name="update_downloading">Downloading version %1$s…</string>
+    <string name="update_downloaded">Version %1$s is downloaded</string>
+    <string name="update_downloaded_hint">The file comes from the project\'s releases on GitHub and is signed with the same key as this app. Android asks you to confirm the installation; your modules and their data are kept.</string>
+    <string name="update_install">Install</string>
+    <string name="update_failed_network">Could not reach GitHub.</string>
+    <string name="update_failed_download">The download failed.</string>
+    <string name="update_failed_wrong_app">The downloaded file is not a build of this app signed with the same key, so it was not installed.</string>
+    <string name="update_failed_not_allowed">Installing is not allowed for this app yet.</string>
+    <string name="update_on_start">Check when the app starts</string>
+    <string name="update_on_start_hint">Off by default: the app contacts GitHub only when you press the button. When on, it looks once at every start and tells you if there is something new.</string>
+    <string name="update_announce_body">A new version of ModuForge is available.</string>
+    <string name="update_open_settings">Open updates</string>
+    <string name="update_later">Later</string>
     <string name="settings_offline_title">Works offline</string>
-    <string name="settings_offline_body">The host never connects to the network on its own. It opens connections only for modules you granted internet access, and records each one in the audit log.</string>
+    <string name="settings_offline_body">The host connects to the network only for modules you granted internet access, recording each connection in the audit log, and to GitHub when you check for an update or open an install link.</string>
     <string name="settings_responsible_title">Responsible use</string>
     <string name="settings_responsible_body">ModuForge is for authorized testing, learning and automation. Use modules only against systems you own or are explicitly permitted to test. Intrusive permissions require confirming authorization for each target, and every such confirmation is recorded in the audit log.</string>
 

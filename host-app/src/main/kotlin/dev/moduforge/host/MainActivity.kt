@@ -13,6 +13,7 @@ import dev.moduforge.host.consent.ConsentCoordinator
 import dev.moduforge.host.consent.InputCoordinator
 import dev.moduforge.host.runtime.BackgroundCoordinator
 import dev.moduforge.host.runtime.IncomingPackages
+import dev.moduforge.host.update.UpdateManager
 import dev.moduforge.host.ui.ModuForgeApp
 import dev.moduforge.host.ui.theme.ModuForgeTheme
 import javax.inject.Inject
@@ -35,15 +36,21 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var incoming: IncomingPackages
 
+    @Inject
+    lateinit var updates: UpdateManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // A restored activity has already handled the intent it was started with.
-        if (savedInstanceState == null) incoming.offer(intent)
+        if (savedInstanceState == null) {
+            incoming.offer(intent)
+            updates.checkAtStartup()
+        }
         setContent {
             val appearance by appearanceStore.appearance.collectAsStateWithLifecycle()
             ModuForgeTheme(appearance) {
-                ModuForgeApp(consent, input, incoming, background.wantsNotifications)
+                ModuForgeApp(consent, input, incoming, updates, background.wantsNotifications)
             }
         }
     }

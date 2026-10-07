@@ -28,6 +28,7 @@ modules, and decides what each of them may reach.
   interface drawn by the app.
 - Module settings the user can change, and module output that is kept and can be shared.
 - Automatic start on boot, updates of installed modules, an audit log.
+- Updating the app itself from the releases on GitHub, on request.
 - For authors: `mfrg run` executes a module on the computer, `mfrg push` sends it to the
   phone and shows its output, `mfrg pack` and `mfrg link` publish it. Libraries for
   Telegram bots, settings and schedules in both languages.

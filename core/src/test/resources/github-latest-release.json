@@ -1,0 +1,33 @@
+{
+ "tag_name": "v0.1.1",
+ "draft": false,
+ "prerelease": false,
+ "body": "Android 8.0 or newer. Updates over 0.1.0 (same signing key).\n\n**New since 0.1.0**\n- JavaScript modules next to Lua, with the same API; a wider script API (dates, hashes, base64, HTTP redirects/forms/uploads, raw connections, WebSocket, a simple UI).\n- Editor in the app: highlighting, line numbers, snippets, several files, jump to the line of an error.\n- Module settings the user can change later; module output is kept across restarts and can be shared.\n- `mfrg run` runs a module on the computer, `mfrg push` installs it on the phone with one command (developer mode in Settings).\n- Install by link or by opening a `.mfrg` file; links carry the author's key so the app verifies it.\n- Kotlin module template that builds outside the repository.\n\n**Files**\n- `ModuForge-0.1.1.apk` — the app.\n- `*.mfrg` — example modules, signed with the project's example key.\n\nExample install links (open on the phone with ModuForge installed):\n\n```\nmoduforge://install?url=https%3A%2F%2Fgithub.com%2Fvoksed%2FModuForge%2Freleases%2Fdownload%2Fv0.1.1%2Fjs-counter.mfrg&signer=2f3e9c4cfd34799b35478351e7e61a47c528b4bdf3b8305a47acba1dac71e96c\nmoduforge://install?url=https%3A%2F%2Fgithub.com%2Fvoksed%2FModuForge%2Freleases%2Fdownload%2Fv0.1.1%2Fjs-weather.mfrg&signer=2f3e9c4cfd34799b35478351e7e61a47c528b4bdf3b8305a47acba1dac71e96c\n```\n\nDocumentation: [English](https://github.com/voksed/ModuForge/blob/main/docs/en/README.md) · [Русский](https://github.com/voksed/ModuForge/blob/main/docs/ru/README.md)\n",
+ "assets": [
+  {
+   "name": "js-counter.mfrg",
+   "size": 1328,
+   "browser_download_url": "https://github.com/voksed/ModuForge/releases/download/v0.1.1/js-counter.mfrg"
+  },
+  {
+   "name": "js-weather.mfrg",
+   "size": 1656,
+   "browser_download_url": "https://github.com/voksed/ModuForge/releases/download/v0.1.1/js-weather.mfrg"
+  },
+  {
+   "name": "lua-hello.mfrg",
+   "size": 2023,
+   "browser_download_url": "https://github.com/voksed/ModuForge/releases/download/v0.1.1/lua-hello.mfrg"
+  },
+  {
+   "name": "ModuForge-0.1.1.apk",
+   "size": 10683812,
+   "browser_download_url": "https://github.com/voksed/ModuForge/releases/download/v0.1.1/ModuForge-0.1.1.apk"
+  },
+  {
+   "name": "telegram-echo-bot.mfrg",
+   "size": 1593,
+   "browser_download_url": "https://github.com/voksed/ModuForge/releases/download/v0.1.1/telegram-echo-bot.mfrg"
+  }
+ ]
+}
