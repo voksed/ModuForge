@@ -269,6 +269,50 @@ class PackageImportTest {
     }
 
     @Test
+    fun pythonModuleWithSeveralFilesRunsInTheSandbox() = runBlocking {
+        val id = "local.pynote"
+        val files = mapOf(
+            "main.py" to """
+                import json
+                import mf
+                from lib import util
+                from mf import config
+                minutes = config.get("minutes", label="Minutes", default=30)
+                mf.log("PY sum=" + str(util.double(21)) + " minutes=" + str(minutes) + " " + json.dumps([1, {"a": None}]))
+                mf.log("PY escape=" + str(__builtins__ if False else "none"))
+                try:
+                    mf.http("https://example.com/")
+                except mf.Error as e:
+                    mf.log("PY http=" + str(e))
+                try:
+                    import os
+                except ImportError as e:
+                    mf.log("PY os=refused")
+                mf.log("PY done")
+            """.trimIndent(),
+            "lib/__init__.py" to "",
+            "lib/util.py" to "def double(n):\n    return n * 2\n",
+        )
+        try {
+            val manifest = LocalModules.manifest(id, "Py note", files.getValue("main.py"), emptySet(), previous = null, runtime = ModuleRuntimeKind.PYTHON)
+            assertEquals("main.py", manifest.entry)
+            assertTrue(installer.saveLocal(manifest, files) is InstallResult.Installed)
+            assertTrue(manager.setEnabled(id, true))
+            assertTrue("start failed: ${audit.events().map { "${it.type} ${it.detail}" }}", manager.start(id))
+            val report = withTimeoutOrNull(40_000) {
+                logs.observe(id).first { lines -> lines.any { it.message == "PY done" || it.message.startsWith("script failed") } }
+            }.orEmpty().map { it.message }
+            assertTrue(report.toString(), "PY done" in report)
+            assertTrue(report.toString(), report.any { it.startsWith("PY sum=42 minutes=30 ") && it.endsWith("[1, {\"a\": null}]") })
+            assertTrue(report.toString(), report.any { it.startsWith("PY http=") })
+            assertTrue(report.toString(), "PY os=refused" in report)
+        } finally {
+            runtime.kill(id)
+            registry.delete(id)
+        }
+    }
+
+    @Test
     fun deviceServicesAreReachedThroughTheBridgeOnlyWithTheirPermission() = runBlocking {
         val id = "local.devicecheck"
         val code = """
@@ -342,10 +386,15 @@ class PackageImportTest {
 
     @Test
     fun packageForAnUnsupportedRuntimeIsRejected() = runBlocking {
+        // A host that can run only Lua, as an older build would be.
+        val luaOnly = object : dev.moduforge.core.module.ModuleRuntime by runtime {
+            override val supportedRuntimes = setOf(ModuleRuntimeKind.LUA)
+        }
+        val limited = ModuleInstaller(packages, registry, ModuleManager(registry, grants, audit, luaOnly), moduleStorage)
         val bytes = pack(manifest(runtime = "python", entry = "main.py"), mapOf("code/main.py" to "print('hi')".toByteArray()))
-        val inspection = installer.inspect { bytes.inputStream() } as PackageInspection.Ready
+        val inspection = limited.inspect { bytes.inputStream() } as PackageInspection.Ready
 
-        val result = installer.install(inspection)
+        val result = limited.install(inspection)
 
         assertTrue(result.toString(), result is InstallResult.Rejected && "not supported" in result.problems.single())
         assertNull(registry.find(moduleId))

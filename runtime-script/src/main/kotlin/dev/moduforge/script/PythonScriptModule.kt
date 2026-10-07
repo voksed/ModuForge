@@ -64,6 +64,8 @@ internal class PythonScriptModule(private val files: Map<String, ByteArray>, pri
     private fun runInterpreter(context: ModuleContext, interpreter: Interpreter, source: String) {
         try {
             interpreter.runMain(source, entry)
+            // A line left unfinished by print(..., end="") comes before the closing note.
+            interpreter.flushOutput()
             context.log.info("script finished")
             context.stopSelf("script finished")
         } catch (e: PyExit) {
