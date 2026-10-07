@@ -22,6 +22,15 @@ class AppUpdatesTest {
     }
 
     @Test
+    fun `each edition takes its own apk`() {
+        val base = "https://github.com/voksed/ModuForge/releases/download/v0.2.0/"
+        val assets = """{"name":"ModuForge-0.2.0-full.apk","size":2,"browser_download_url":"${base}ModuForge-0.2.0-full.apk"},""" +
+            """{"name":"ModuForge-0.2.0.apk","size":1,"browser_download_url":"${base}ModuForge-0.2.0.apk"}"""
+        assertEquals("${base}ModuForge-0.2.0.apk", AppUpdates.parse(release(assets = assets), "0.1.1", "en")?.downloadUrl)
+        assertEquals("${base}ModuForge-0.2.0-full.apk", AppUpdates.parse(release(assets = assets), "0.1.1", "en", full = true)?.downloadUrl)
+    }
+
+    @Test
     fun `the same, an older or an unreadable version is not an update`() {
         assertNull(AppUpdates.parse(release(tag = "v0.1.1"), "0.1.1", "en"))
         assertNull(AppUpdates.parse(release(tag = "v0.1.0"), "0.1.1", "en"))

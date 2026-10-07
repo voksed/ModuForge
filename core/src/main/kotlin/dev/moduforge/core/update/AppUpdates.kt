@@ -37,9 +37,11 @@ object AppUpdates {
      * @param json body of the release answer.
      * @param currentVersion version of the running app.
      * @param language two-letter language of the app, for the release notes.
+     * @param full true for the full edition, which updates to the APK with `full` in its name;
+     * the standard edition takes an APK without it.
      * @return the update, or null when the release is not newer, malformed or carries no usable APK.
      */
-    fun parse(json: String, currentVersion: String, language: String): AppUpdate? {
+    fun parse(json: String, currentVersion: String, language: String, full: Boolean = false): AppUpdate? {
         val release = try {
             Json.parseToJsonElement(json) as? JsonObject
         } catch (e: Exception) {
@@ -54,7 +56,7 @@ object AppUpdates {
         val apk = (release["assets"] as? JsonArray).orEmpty().mapNotNull { it as? JsonObject }.firstNotNullOfOrNull { asset ->
             val name = asset.text("name")?.lowercase() ?: return@firstNotNullOfOrNull null
             val url = asset.text("browser_download_url") ?: return@firstNotNullOfOrNull null
-            if (name.endsWith(".apk") && isDownloadAddress(url)) url to ((asset["size"] as? JsonPrimitive)?.longOrNull ?: 0L) else null
+            if (name.endsWith(".apk") && ("full" in name) == full && isDownloadAddress(url)) url to ((asset["size"] as? JsonPrimitive)?.longOrNull ?: 0L) else null
         } ?: return null
         if (apk.second > MAX_APK_BYTES) return null
 

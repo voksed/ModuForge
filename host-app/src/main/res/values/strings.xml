@@ -179,6 +179,7 @@
     <string name="device_hint">For modules that use the camera, touch the screen or open apps. Each module needs its own permission; these switches are the system side of it.</string>
     <string name="device_screen_on">Screen control is on.</string>
     <string name="device_screen_off">Screen control is off: modules cannot touch or read the screen.</string>
+    <string name="device_screen_absent">This edition has no screen control, so it installs on any phone. For modules that touch the screen, install the full edition (the file with “full” in its name) from the releases.</string>
     <string name="device_screen_open">Open accessibility settings</string>
     <string name="device_screen_restricted">If Android refuses to turn it on because the app is restricted: open the app info of ModuForge, press ⋮ and choose Allow restricted settings.</string>
     <string name="device_camera_on">Camera access is allowed.</string>

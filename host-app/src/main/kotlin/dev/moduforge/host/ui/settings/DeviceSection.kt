@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import dev.moduforge.host.BuildConfig
 import dev.moduforge.host.R
 import dev.moduforge.host.device.ModuForgeAccessibilityService
 
@@ -57,11 +58,19 @@ internal fun DeviceSection() {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Text(stringResource(if (screenOn) R.string.device_screen_on else R.string.device_screen_off))
-        OutlinedButton(onClick = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) {
-            Text(stringResource(R.string.device_screen_open))
+        if (!BuildConfig.SCREEN_CONTROL) {
+            Text(
+                stringResource(R.string.device_screen_absent),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            Text(stringResource(if (screenOn) R.string.device_screen_on else R.string.device_screen_off))
+            OutlinedButton(onClick = { context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }) {
+                Text(stringResource(R.string.device_screen_open))
+            }
         }
-        if (!screenOn) {
+        if (BuildConfig.SCREEN_CONTROL && !screenOn) {
             Text(
                 stringResource(R.string.device_screen_restricted),
                 style = MaterialTheme.typography.bodySmall,

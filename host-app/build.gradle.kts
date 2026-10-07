@@ -42,11 +42,24 @@ android {
             // Lets a development build live next to an installed release, whose signature differs.
             applicationIdSuffix = ".debug"
             manifestPlaceholders["appLabel"] = "ModuForge Dev"
+            buildConfigField("boolean", "SCREEN_CONTROL", "true")
         }
+        // The standard edition. It does not declare the accessibility service, because Google Play
+        // Protect refuses to install a sideloaded app that declares one ("blocked to protect the device").
         release {
             manifestPlaceholders["appLabel"] = "@string/app_name"
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
+            buildConfigField("boolean", "SCREEN_CONTROL", "false")
+        }
+        // The full edition: the same app plus the accessibility service behind `mf.screen`.
+        // Installing it takes a deliberate step on the phone, see docs/en/user-guide.md.
+        create("full") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            manifestPlaceholders["appLabel"] = "@string/app_name"
+            signingConfig = signingConfigs.findByName("release")
+            buildConfigField("boolean", "SCREEN_CONTROL", "true")
         }
     }
 

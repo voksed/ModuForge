@@ -7,6 +7,7 @@ import android.graphics.Path
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
+import dev.moduforge.host.BuildConfig
 import dev.moduforge.sandbox.DeviceCallException
 import kotlinx.coroutines.delay
 import java.util.concurrent.CountDownLatch
@@ -109,8 +110,13 @@ internal class ScreenService(private val context: Context) {
 
     // --- internals --------------------------------------------------------------------------
 
-    private fun require(): AccessibilityService = ModuForgeAccessibilityService.instance
-        ?: throw DeviceCallException("the accessibility service of ModuForge is off: turn it on in Settings → Accessibility")
+    private fun require(): AccessibilityService {
+        if (!BuildConfig.SCREEN_CONTROL) {
+            throw DeviceCallException("this edition of ModuForge has no screen control: install the full edition (ModuForge-<version>-full.apk) from the releases")
+        }
+        return ModuForgeAccessibilityService.instance
+            ?: throw DeviceCallException("the accessibility service of ModuForge is off: turn it on in Settings → Accessibility")
+    }
 
     private fun <T> readable(block: (AccessibilityNodeInfo) -> T): T {
         val root = require().rootInActiveWindow ?: throw DeviceCallException("the screen cannot be read right now")

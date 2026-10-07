@@ -158,7 +158,7 @@ class UpdateManager @Inject constructor(
             if (code == HttpURLConnection.HTTP_NOT_FOUND) return null
             if (code != HttpURLConnection.HTTP_OK) throw IOException("HTTP $code")
             val body = connection.inputStream.use { it.readBytes(MAX_RELEASE_JSON_BYTES) }.decodeToString()
-            return AppUpdates.parse(body, BuildConfig.VERSION_NAME, Locale.getDefault().language)
+            return AppUpdates.parse(body, BuildConfig.VERSION_NAME, Locale.getDefault().language, BuildConfig.SCREEN_CONTROL && !BuildConfig.DEBUG)
         } finally {
             connection.disconnect()
         }
