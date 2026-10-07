@@ -31,6 +31,11 @@ bot:run()
 - **Audit log.** Every installation, start, permission decision and network connection.
 - **Lua and JavaScript.** The same API in both, with libraries for Telegram bots,
   settings and schedules; HTTP, raw connections, WebSocket, hashes, dates, a simple UI.
+- **Scenarios with the phone.** `mf.apps`, `mf.screen`, `mf.camera`: open apps, press buttons
+  in them, run an autoclicker, react to what appears on the screen, take photos. Each is its
+  own permission; the screen works only while you keep the accessibility service on, a
+  notification shows while it is used, and some screens (settings, permission dialogs,
+  ModuForge itself) stay closed to modules.
 - **Write a module on the phone.** Create module → pick a starting point → edit → run.
   An editor with highlighting, snippets and several files; no computer, manifest or
   signature; permissions are worked out from the code.

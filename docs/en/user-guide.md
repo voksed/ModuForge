@@ -149,6 +149,31 @@ memory only and is lost when ModuForge restarts.
 
 **Reset appearance** returns everything to the defaults.
 
+## Modules that use the phone: apps, screen, camera
+
+Some modules open apps, press buttons in them (autoclickers, "accept the dialog when it
+appears") or take photos. They ask for three separate permissions when they start, each
+described in plain words: **Launch apps**, **Control the screen**, **Camera**. Grant only
+what you understand and the module needs; the rest stays closed.
+
+**Settings → Device control** is the system side:
+
+- **Screen control** works through the accessibility service of ModuForge. Press **Open
+  accessibility settings**, find ModuForge, turn it on and confirm Android's warning. If
+  Android says the setting is restricted for this app, open the app info of ModuForge, press
+  ⋮ and choose **Allow restricted settings**, then try again. Turning the service off takes
+  the ability away from every module at once.
+- **Camera**: press **Allow camera** once. Without it a module's photo call fails with a
+  message that says so.
+
+While a module uses the camera or the screen, a notification names it, and Android shows its
+camera indicator during a photo. Every action is in the **Audit log** under "Used the device".
+
+Things a module cannot do whatever you grant: read or press anything in the system settings,
+the permission and installer dialogs, or ModuForge itself, and read or type into password
+fields. The back and home buttons always work, so you can get out of whatever it is doing; to
+stop it, press **Stop** or **Kill** on its screen.
+
 ## Updating the app
 
 **Settings → Updates → Check for updates** looks at the releases of the project on GitHub.

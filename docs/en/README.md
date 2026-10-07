@@ -26,6 +26,9 @@ modules, and decides what each of them may reach.
 - Host services behind permissions: internet access (HTTP, raw connections, WebSocket),
   encrypted storage, background execution, notifications, questions to the user, a simple
   interface drawn by the app.
+- Device control for scenarios: open apps, touch and read the screen (autoclickers, "press the
+  button when it appears", reacting to notifications) and take photos — each its own
+  permission, visible while in use, and recorded in the audit log.
 - Module settings the user can change, and module output that is kept and can be shared.
 - Automatic start on boot, updates of installed modules, an audit log.
 - Updating the app itself from the releases on GitHub, on request.

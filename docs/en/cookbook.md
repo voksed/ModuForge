@@ -485,6 +485,155 @@ try {
 }
 ```
 
+## Open an app and press its buttons
+
+Needs `LAUNCH_APPS` and `SCREEN_CONTROL`; the user also turns on the accessibility service
+once. Find out what the screen says with `mf.screen.texts()` before you press anything.
+
+```lua
+mf.apps.launch("Calculator")
+mf.screen.wait("7", 8)
+for _, key in ipairs({ "7", "+", "8", "=" }) do
+    mf.screen.click(key)
+    mf.sleep(0.4)
+end
+```
+
+```js
+mf.apps.launch("Calculator");
+mf.screen.wait("7", 8);
+["7", "+", "8", "="].forEach(function (key) {
+    mf.screen.click(key);
+    mf.sleep(0.4);
+});
+```
+
+## An autoclicker
+
+Taps a point every half second until the module is stopped. Put the finger positions of your
+own screen in; `mf.screen.info()` tells how large it is.
+
+```lua
+local info = mf.screen.info()
+local x, y = math.floor(info.width / 2), math.floor(info.height / 2)
+local taps = 0
+while true do
+    local ok, err = mf.screen.tap(x, y)
+    if not ok then mf.log("stopped: " .. err) break end
+    taps = taps + 1
+    if taps % 100 == 0 then mf.log(taps .. " taps") end
+    mf.sleep(0.5)
+end
+```
+
+```js
+var info = mf.screen.info();
+var taps = 0;
+while (true) {
+    mf.screen.tap(info.width / 2, info.height / 2);
+    if (++taps % 100 === 0) mf.log(taps + " taps");
+    mf.sleep(0.5);
+}
+```
+
+The end of the script, or the user pressing Stop, ends the clicking at once.
+
+## Press a button when it appears
+
+Waits for a screen to show a word, then presses the button — a cookie banner, an "Accept"
+dialog, a "Skip" button.
+
+```lua
+while true do
+    local found = mf.screen.wait("Skip", 25)
+    if found.found then mf.screen.click("Skip") mf.log("skipped") end
+end
+```
+
+```js
+while (true) {
+    if (mf.screen.wait("Skip", 25).found) {
+        mf.screen.click("Skip");
+        mf.log("skipped");
+    }
+}
+```
+
+## React to what happens on the screen
+
+`mf.screen.event` hands over the next click, opened screen or notification from any app.
+Typed text is never part of it.
+
+```lua
+while true do
+    local event = mf.screen.event(30)
+    if event and event.type == "notification" then
+        mf.log(event.package .. ": " .. event.text)
+    end
+end
+```
+
+```js
+while (true) {
+    var event = mf.screen.event(30);
+    if (event && event.type === "notification") mf.log(event.package + ": " + event.text);
+}
+```
+
+## Take a photo
+
+Needs `CAMERA` and `FILE_SANDBOXED`; the user allows the camera once in **Settings → Device
+control**. The picture lands in module storage.
+
+```lua
+local photo, err = mf.camera.photo{ path = "door.jpg", lens = "back", size = 1280 }
+if photo then
+    mf.log(photo.width .. "x" .. photo.height .. ", " .. photo.bytes .. " bytes")
+else
+    mf.log("no photo: " .. err)
+end
+```
+
+```js
+var photo = mf.camera.photo({ path: "door.jpg", lens: "back", size: 1280 });
+mf.log(photo.width + "x" + photo.height + ", " + photo.bytes + " bytes");
+```
+
+## Send a photo to Telegram
+
+Add `NETWORK_OUTBOUND`, and the user sees that this module can both take pictures and send
+them somewhere.
+
+```lua
+local photo = assert(mf.camera.photo("snap.jpg"))
+mf.http{
+    url = "https://api.telegram.org/bot" .. token .. "/sendPhoto",
+    form = { chat_id = chat },
+    files = { photo = { filename = "snap.jpg", type = "image/jpeg", content = mf.storage.read("snap.jpg") } },
+}
+```
+
+```js
+mf.camera.photo("snap.jpg");
+mf.http({
+    url: "https://api.telegram.org/bot" + token + "/sendPhoto",
+    form: { chat_id: chat },
+    files: [{ field: "photo", filename: "snap.jpg", type: "image/jpeg", content: mf.storage.readBytes("snap.jpg") }]
+});
+```
+
+## Open a link or check for an app
+
+```lua
+if mf.apps.installed("org.telegram.messenger") then mf.apps.launch("Telegram") end
+mf.apps.open("https://example.org")
+```
+
+```js
+if (mf.apps.installed("org.telegram.messenger")) mf.apps.launch("Telegram");
+mf.apps.open("https://example.org");
+```
+
 ## Try it on a computer, then on the phone
 
 ```

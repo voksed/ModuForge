@@ -202,6 +202,42 @@ while (true) {
 
 Элементы и их поля перечислены в [справочнике Lua](lua-api.md#интерфейс).
 
+## Службы устройства — приложения, экран, камера
+
+Те же службы, что и в Lua, с теми же разрешениями (`LAUNCH_APPS`, `SCREEN_CONTROL`, `CAMERA`),
+теми же индикаторами и теми же закрытыми экранами; сначала прочитайте введение в
+[справочнике Lua](lua-api.md#службы-устройства--приложения-экран-камера). Вызовы принимают
+аргументы по порядку или одним объектом — `mf.screen.tap(100, 200)` то же, что
+`mf.screen.tap({ x: 100, y: 200 })`, — а неудавшийся вызов бросает `Error`.
+
+| Вызов | Возвращает |
+|---|---|
+| `mf.apps.list()` | Массив `{ package, name }` |
+| `mf.apps.launch(app)` | `{ ok, package }`; `app` — имя пакета или название, как в лаунчере |
+| `mf.apps.open(url)` | Открывает ссылку (`http`, `https`, `mailto`, `geo`, `tel`) |
+| `mf.apps.installed(package)` | `true` или `false` |
+| `mf.screen.info()` | `{ width, height, package, enabled }` |
+| `mf.screen.tap(x, y, ms)`, `press(x, y, ms)`, `swipe(x1, y1, x2, y2, ms)` | Касания |
+| `mf.screen.back()`, `home()`, `recents()`, `notifications()` | Системные кнопки |
+| `mf.screen.texts()` | Массив `{ text, desc, id, x, y, bounds, clickable }` для всего читаемого |
+| `mf.screen.find(text)` | Элементы, у которых текст, описание или id содержит `text`, точные совпадения первыми |
+| `mf.screen.click(text)` | Нажимает элемент с надписью `text` |
+| `mf.screen.type(text)` | Вводит текст в поле с фокусом |
+| `mf.screen.wait(text, timeout)` | Элемент с `found: true` или `{ found: false }` |
+| `mf.screen.event(timeout)` | `{ type: "click" \| "window" \| "notification", package, … }` или `null` |
+| `mf.camera.list()` | Массив `{ lens, id }` |
+| `mf.camera.photo(path, lens, size, quality, flash)` | `{ ok, path, width, height, bytes }`; файл лежит в хранилище модуля |
+
+```js
+// Реагирует на то, что пользователь делает в других приложениях.
+while (true) {
+    var event = mf.screen.event(30);
+    if (event && event.type === "notification" && event.package === "org.telegram.messenger") {
+        mf.log("telegram: " + event.text);
+    }
+}
+```
+
 ## Хеши и кодировки
 
 | Вызов | Возвращает |

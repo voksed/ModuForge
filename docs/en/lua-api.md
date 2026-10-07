@@ -219,6 +219,106 @@ Encoding: a table whose keys are exactly `1..n` becomes an array, any other tabl
 object. An empty table becomes `{}`. Whole numbers are written without a fraction.
 Functions and tables nested deeper than 64 levels cannot be encoded.
 
+## Device services — apps, screen, camera
+
+Scripts can use the phone itself: open apps, press buttons in them, take photos. This is the
+part of ModuForge that needs the most care, so each service is a separate permission, shown
+to the user in plain words before the module starts:
+
+| Table | Permission | What it does |
+|---|---|---|
+| `mf.apps` | `LAUNCH_APPS` | List, open and link into the apps on the phone |
+| `mf.screen` | `SCREEN_CONTROL` | Touch the screen and read it, in every app |
+| `mf.camera` | `CAMERA` | Take photos with the cameras |
+
+What the user gets in return:
+
+- A notification — "*module* is controlling the screen" or "…is using the camera" — while a
+  module uses these, and Android's own camera indicator during a photo.
+- Every call that acts (a tap, a launch, a photo) in the audit log; reading calls once a
+  minute. What a module types is never copied into the log.
+- `mf.screen` works only while the user keeps the accessibility service of ModuForge turned
+  on in the system settings, and stops when they turn it off.
+
+Opening another app takes ModuForge off the screen, and the host stops a module that cannot
+work in the background. So a script that uses `mf.apps` or `mf.screen` gets
+`BACKGROUND_EXECUTION` declared automatically in the editor; in a packed module declare it
+yourself.
+
+Every call takes its arguments either **by position** or as **one table**:
+`mf.screen.tap(100, 200)` and `mf.screen.tap{ x = 100, y = 200 }` are the same. A call that
+fails returns `nil` and the reason, like every other service.
+
+### `mf.apps`
+
+| Call | Returns |
+|---|---|
+| `mf.apps.list()` | Table of `{ package, name }` for the apps that have an icon, sorted by name |
+| `mf.apps.launch(app)` | `{ ok = true, package }`. `app` is a package name or the name as the launcher shows it (exact first, then part of the name) |
+| `mf.apps.open(url)` | Opens a link in the app that handles it. `http`, `https`, `mailto`, `geo`; `tel` only prepares the call |
+| `mf.apps.installed(package)` | `true` or `false` |
+
+ModuForge itself cannot be launched this way.
+
+### `mf.screen`
+
+Coordinates are pixels of the screen as it is now (rotation counts). Positions of buttons are
+best found with `mf.screen.find` rather than guessed.
+
+| Call | Description |
+|---|---|
+| `mf.screen.info()` | `{ width, height, package, enabled }` — size, the app on top, whether the service is on |
+| `mf.screen.tap(x, y [, ms])` | A tap; `ms` is how long the finger stays (default 50) |
+| `mf.screen.press(x, y [, ms])` | A long press (default 700 ms) |
+| `mf.screen.swipe(x1, y1, x2, y2 [, ms])` | A swipe (default 300 ms) |
+| `mf.screen.back()`, `home()`, `recents()`, `notifications()` | The system buttons and the notification shade |
+| `mf.screen.texts()` | Everything readable on the screen: a table of `{ text, desc, id, x, y, bounds, clickable }` |
+| `mf.screen.find(text)` | The elements whose text, description or id contains `text`; exact matches first |
+| `mf.screen.click(text)` | Presses the element that says `text` (or the pressable one around it) |
+| `mf.screen.type(text)` | Types into the field that has the focus |
+| `mf.screen.wait(text [, timeout])` | Waits (up to 25 s, default 10) until something says `text`; the element with `found = true`, or `{ found = false }` |
+| `mf.screen.event([timeout])` | The next thing that happened on the screen, or `nil` |
+
+`mf.screen.event` is how a module reacts to what the user does in other apps. It returns
+`{ type = "click", package, text }` when a button was pressed, `{ type = "window", package, title }`
+when a screen opened and `{ type = "notification", package, text }` when a notification
+arrived. Text typed into fields is never reported.
+
+Some screens are closed to modules whatever they ask: system settings, the permission and
+installer dialogs, and ModuForge itself — a module must not approve its own permissions.
+Password fields are never read or typed into. `back` and `home` always work.
+
+### `mf.camera`
+
+| Call | Description |
+|---|---|
+| `mf.camera.list()` | The lenses: a table of `{ lens = "back" or "front", id }` |
+| `mf.camera.photo(path [, lens [, size [, quality [, flash]]]])` | Takes a photo and stores it as `path` in module storage. Returns `{ ok, path, width, height, bytes }` |
+
+`lens` is `"back"` (default) or `"front"`; `size` is the longest side in pixels (default
+1280, at most 2048); `quality` is the JPEG quality (default 80); `flash` is `"off"`
+(default), `"on"` or `"auto"`. The photo is shrunk to fit a storage file (512 KB), so the
+module needs `FILE_SANDBOXED`; read it back with `mf.storage.read`, or send it on with
+`mf.http` — which needs `NETWORK_OUTBOUND`, so the user sees what the module can do with it.
+
+Android lets an app use the camera only while it is visible or showing a notification; keep
+that in mind for scenarios that photograph by timer. The user also allows the camera once in
+**Settings → Device control**.
+
+```lua
+-- Opens the calculator, presses 7 + 8 = and reads the answer.
+mf.apps.launch("Calculator")
+mf.screen.wait("7", 8)
+for _, key in ipairs({ "7", "+", "8", "=" }) do
+    mf.screen.click(key)
+    mf.sleep(0.4)
+end
+for _, item in ipairs(mf.screen.texts()) do
+    if item.text:match("^%d+$") and item.y < 600 then mf.log("result: " .. item.text) end
+end
+mf.screen.back()
+```
+
 ## Hashes and encodings
 
 | Call | Returns |

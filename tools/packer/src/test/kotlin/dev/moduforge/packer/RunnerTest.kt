@@ -38,6 +38,37 @@ class RunnerTest {
     }
 
     @Test
+    fun `a pretend phone answers device calls so that a scenario can be tried on a computer`() {
+        val dir = project(
+            "js", "main.js", "\"LAUNCH_APPS\", \"SCREEN_CONTROL\", \"CAMERA\", \"FILE_SANDBOXED\"",
+            """
+            var apps = mf.apps.list();
+            mf.log(apps.length + " apps");
+            mf.apps.launch("Calculator");
+            mf.screen.click("7");
+            mf.screen.tap(100, 200);
+            var photo = mf.camera.photo("shot.jpg");
+            mf.log("photo " + photo.width + "x" + photo.height + " " + (mf.storage.readBytes("shot.jpg").length > 100));
+            try { mf.apps.launch("Nope"); } catch (e) { mf.log(e.message); }
+            """,
+        )
+        assertEquals(
+            listOf(
+                "3 apps", "[apps] launch Calculator", "[screen] click \"7\"", "[screen] tap 100.0,200.0",
+                "[camera] photo with the back camera saved as shot.jpg (a grey picture)", "photo 640x480 true",
+                "no app is called \"Nope\"",
+            ),
+            execute(dir.path).filter { !it.startsWith("script finished") },
+        )
+    }
+
+    @Test
+    fun `device calls without their permission are refused on the computer too`() {
+        val dir = project("lua", "main.lua", "\"FILE_SANDBOXED\"", "local r, e = mf.screen.tap(1, 2); mf.log(tostring(r) .. ' ' .. tostring(e))")
+        assertEquals("nil SCREEN_CONTROL is not granted", execute(dir.path).first())
+    }
+
+    @Test
     fun `a single script finds the scripts next to it`() {
         val dir = temp.newFolder()
         File(dir, "lib").mkdirs()

@@ -61,7 +61,14 @@ class PackageImportTest {
     private val packages = ModulePackageStore(storage)
     private val moduleStorage = ModuleStorage(File(storage, "data"), KeystoreStorageCipher("moduforge.test-storage"))
     private val broker = DefaultPermissionBroker(registry, grants, { ConsentDecision.Allow() }, audit)
-    private val runtime = SandboxModuleRuntime(context, packages, broker, logs, { _, _ -> }, ModuleNetworkRelay(broker, audit), moduleStorage, { _, _, _, _ -> true }, { _, _, _, _ -> null }, scope)
+    private val deviceCalls = java.util.concurrent.CopyOnWriteArrayList<String>()
+    private val devices = object : dev.moduforge.sandbox.DeviceServices {
+        override suspend fun call(moduleId: String, moduleName: String, service: String, method: String, argsJson: String): String {
+            deviceCalls += "$moduleId $service.$method $argsJson"
+            return if (method == "list") """[{"package":"com.example","name":"Example"}]""" else throw dev.moduforge.sandbox.DeviceCallException("not on this device")
+        }
+    }
+    private val runtime = SandboxModuleRuntime(context, packages, broker, logs, { _, _ -> }, ModuleNetworkRelay(broker, audit), moduleStorage, { _, _, _, _ -> true }, { _, _, _, _ -> null }, scope, devices)
     private val manager = ModuleManager(registry, grants, audit, runtime)
     private val installer = ModuleInstaller(packages, registry, manager, moduleStorage)
     private val key = SigningKey.generate()
@@ -255,6 +262,43 @@ class PackageImportTest {
             assertTrue(report.toString(), "JS escape=undefined/undefined/undefined" in report)
             // Network was not declared by a script that only mentions it inside a try: it is declared, but not granted.
             assertTrue(report.toString(), report.any { it.startsWith("JS http=") })
+        } finally {
+            runtime.kill(id)
+            registry.delete(id)
+        }
+    }
+
+    @Test
+    fun deviceServicesAreReachedThroughTheBridgeOnlyWithTheirPermission() = runBlocking {
+        val id = "local.devicecheck"
+        val code = """
+            local before, why = mf.apps.list()
+            mf.log("DEV before=" .. tostring(before) .. " " .. tostring(why))
+            mf.log("DEV request=" .. tostring(mf.request("LAUNCH_APPS", "test")))
+            local apps = mf.apps.list()
+            mf.log("DEV after=" .. apps[1].package .. " " .. apps[1].name)
+            local ok, err = mf.apps.open("https://example.org")
+            mf.log("DEV failure=" .. tostring(ok) .. " " .. tostring(err))
+            local sc, scWhy = mf.screen.info()
+            mf.log("DEV screen=" .. tostring(sc) .. " " .. tostring(scWhy))
+            mf.log("DEV done")
+        """.trimIndent()
+        try {
+            val manifest = LocalModules.manifest(id, "Device check", code, emptySet(), previous = null)
+            assertTrue(manifest.permissions.containsAll(listOf(Capability.LAUNCH_APPS, Capability.SCREEN_CONTROL)))
+            assertTrue(installer.saveLocal(manifest, code) is InstallResult.Installed)
+            assertTrue(manager.setEnabled(id, true))
+            assertTrue(manager.start(id))
+            val report = withTimeout(60_000) {
+                logs.observe(id).first { lines -> lines.any { it.message == "DEV done" } }
+            }.map { it.message }
+            assertEquals("DEV before=nil LAUNCH_APPS is not granted", report.first { it.startsWith("DEV before") })
+            assertEquals("DEV request=true", report.first { it.startsWith("DEV request") })
+            assertEquals("DEV after=com.example Example", report.first { it.startsWith("DEV after") })
+            assertEquals("DEV failure=nil not on this device", report.first { it.startsWith("DEV failure") })
+            // SCREEN_CONTROL is declared but was never granted: the host is not even asked.
+            assertEquals("DEV screen=nil SCREEN_CONTROL is not granted", report.first { it.startsWith("DEV screen") })
+            assertEquals(listOf("$id apps.list {}", """$id apps.open {"url":"https://example.org"}"""), deviceCalls.toList())
         } finally {
             runtime.kill(id)
             registry.delete(id)

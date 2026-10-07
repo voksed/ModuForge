@@ -487,6 +487,154 @@ try {
 }
 ```
 
+## Открыть приложение и нажимать его кнопки
+
+Нужны `LAUNCH_APPS` и `SCREEN_CONTROL`; пользователь один раз включает ещё и службу специальных
+возможностей. Прежде чем что-то нажимать, узнайте, что на экране, через `mf.screen.texts()`.
+
+```lua
+mf.apps.launch("Калькулятор")
+mf.screen.wait("7", 8)
+for _, key in ipairs({ "7", "+", "8", "=" }) do
+    mf.screen.click(key)
+    mf.sleep(0.4)
+end
+```
+
+```js
+mf.apps.launch("Калькулятор");
+mf.screen.wait("7", 8);
+["7", "+", "8", "="].forEach(function (key) {
+    mf.screen.click(key);
+    mf.sleep(0.4);
+});
+```
+
+## Автокликер
+
+Нажимает точку каждые полсекунды, пока модуль не остановят. Подставьте положение пальца для
+своего экрана; размер подскажет `mf.screen.info()`.
+
+```lua
+local info = mf.screen.info()
+local x, y = math.floor(info.width / 2), math.floor(info.height / 2)
+local taps = 0
+while true do
+    local ok, err = mf.screen.tap(x, y)
+    if not ok then mf.log("остановлено: " .. err) break end
+    taps = taps + 1
+    if taps % 100 == 0 then mf.log(taps .. " нажатий") end
+    mf.sleep(0.5)
+end
+```
+
+```js
+var info = mf.screen.info();
+var taps = 0;
+while (true) {
+    mf.screen.tap(info.width / 2, info.height / 2);
+    if (++taps % 100 === 0) mf.log(taps + " нажатий");
+    mf.sleep(0.5);
+}
+```
+
+Конец скрипта или кнопка «Остановить» прекращают нажатия сразу.
+
+## Нажать кнопку, когда она появилась
+
+Ждёт, пока на экране появится слово, и нажимает кнопку — баннер с куки, диалог «Принять»,
+кнопка «Пропустить».
+
+```lua
+while true do
+    local found = mf.screen.wait("Пропустить", 25)
+    if found.found then mf.screen.click("Пропустить") mf.log("пропущено") end
+end
+```
+
+```js
+while (true) {
+    if (mf.screen.wait("Пропустить", 25).found) {
+        mf.screen.click("Пропустить");
+        mf.log("пропущено");
+    }
+}
+```
+
+## Реагировать на то, что происходит на экране
+
+`mf.screen.event` отдаёт следующее нажатие, открытый экран или уведомление из любого приложения.
+Введённый текст в него не попадает никогда.
+
+```lua
+while true do
+    local event = mf.screen.event(30)
+    if event and event.type == "notification" then
+        mf.log(event.package .. ": " .. event.text)
+    end
+end
+```
+
+```js
+while (true) {
+    var event = mf.screen.event(30);
+    if (event && event.type === "notification") mf.log(event.package + ": " + event.text);
+}
+```
+
+## Сделать снимок
+
+Нужны `CAMERA` и `FILE_SANDBOXED`; камеру пользователь один раз разрешает в **Настройки →
+Управление устройством**. Снимок оказывается в хранилище модуля.
+
+```lua
+local photo, err = mf.camera.photo{ path = "door.jpg", lens = "back", size = 1280 }
+if photo then
+    mf.log(photo.width .. "x" .. photo.height .. ", " .. photo.bytes .. " байт")
+else
+    mf.log("снимка нет: " .. err)
+end
+```
+
+```js
+var photo = mf.camera.photo({ path: "door.jpg", lens: "back", size: 1280 });
+mf.log(photo.width + "x" + photo.height + ", " + photo.bytes + " байт");
+```
+
+## Отправить снимок в Telegram
+
+Добавьте `NETWORK_OUTBOUND` — и пользователь увидит, что этот модуль и снимает, и отправляет.
+
+```lua
+local photo = assert(mf.camera.photo("snap.jpg"))
+mf.http{
+    url = "https://api.telegram.org/bot" .. token .. "/sendPhoto",
+    form = { chat_id = chat },
+    files = { photo = { filename = "snap.jpg", type = "image/jpeg", content = mf.storage.read("snap.jpg") } },
+}
+```
+
+```js
+mf.camera.photo("snap.jpg");
+mf.http({
+    url: "https://api.telegram.org/bot" + token + "/sendPhoto",
+    form: { chat_id: chat },
+    files: [{ field: "photo", filename: "snap.jpg", type: "image/jpeg", content: mf.storage.readBytes("snap.jpg") }]
+});
+```
+
+## Открыть ссылку или проверить приложение
+
+```lua
+if mf.apps.installed("org.telegram.messenger") then mf.apps.launch("Telegram") end
+mf.apps.open("https://example.org")
+```
+
+```js
+if (mf.apps.installed("org.telegram.messenger")) mf.apps.launch("Telegram");
+mf.apps.open("https://example.org");
+```
+
 ## Проверить на компьютере, потом на телефоне
 
 ```

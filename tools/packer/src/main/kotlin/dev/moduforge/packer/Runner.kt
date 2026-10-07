@@ -190,6 +190,16 @@ private class DesktopHost(
         }
     }
 
+    override val device = SimulatedDevice(
+        holds = ::holds,
+        store = { path, data ->
+            if (!holds(Capability.FILE_SANDBOXED)) throw IOException("camera.photo saves into the module's storage: the module needs FILE_SANDBOXED")
+            if (!ModuleManifests.isRelativePath(path)) throw IOException("invalid storage path")
+            File(storageDir, path).apply { parentFile?.mkdirs() }.writeBytes(data)
+        },
+        print = print,
+    )
+
     override val notifications = object : NotificationGateway {
         override suspend fun notify(title: String, text: String) {
             require(Capability.NOTIFICATIONS)

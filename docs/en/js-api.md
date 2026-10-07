@@ -202,6 +202,42 @@ while (true) {
 
 Elements and their fields are listed in the [Lua reference](lua-api.md#interface).
 
+## Device services — apps, screen, camera
+
+The same services as in Lua, with the same permissions (`LAUNCH_APPS`, `SCREEN_CONTROL`,
+`CAMERA`), the same indicators and the same closed screens; read the introduction in the
+[Lua reference](lua-api.md#device-services--apps-screen-camera) first. Calls take their
+arguments by position or as one object — `mf.screen.tap(100, 200)` is
+`mf.screen.tap({ x: 100, y: 200 })` — and a call that fails throws an `Error`.
+
+| Call | Returns |
+|---|---|
+| `mf.apps.list()` | Array of `{ package, name }` |
+| `mf.apps.launch(app)` | `{ ok, package }`; `app` is a package name or a name as the launcher shows it |
+| `mf.apps.open(url)` | Opens a link (`http`, `https`, `mailto`, `geo`, `tel`) |
+| `mf.apps.installed(package)` | `true` or `false` |
+| `mf.screen.info()` | `{ width, height, package, enabled }` |
+| `mf.screen.tap(x, y, ms)`, `press(x, y, ms)`, `swipe(x1, y1, x2, y2, ms)` | Touches |
+| `mf.screen.back()`, `home()`, `recents()`, `notifications()` | System buttons |
+| `mf.screen.texts()` | Array of `{ text, desc, id, x, y, bounds, clickable }` for everything readable |
+| `mf.screen.find(text)` | Elements whose text, description or id contains `text`, exact matches first |
+| `mf.screen.click(text)` | Presses the element that says `text` |
+| `mf.screen.type(text)` | Types into the focused field |
+| `mf.screen.wait(text, timeout)` | The element with `found: true`, or `{ found: false }` |
+| `mf.screen.event(timeout)` | `{ type: "click" \| "window" \| "notification", package, … }` or `null` |
+| `mf.camera.list()` | Array of `{ lens, id }` |
+| `mf.camera.photo(path, lens, size, quality, flash)` | `{ ok, path, width, height, bytes }`; the file is in module storage |
+
+```js
+// Reacts to what the user does in other apps.
+while (true) {
+    var event = mf.screen.event(30);
+    if (event && event.type === "notification" && event.package === "org.telegram.messenger") {
+        mf.log("telegram: " + event.text);
+    }
+}
+```
+
 ## Hashes and encodings
 
 | Call | Returns |

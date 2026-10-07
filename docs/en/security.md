@@ -71,6 +71,36 @@ never installed silently: the script opens in the editor, where the user sees th
 saves it. They run in the same sandbox behind the same permissions, which are still asked
 for before the first start. An unsigned module and a signed one cannot replace each other.
 
+### Device control: apps, screen, camera
+
+`LAUNCH_APPS`, `SCREEN_CONTROL` and `CAMERA` let a module act on the phone, so they have their
+own sensitivity level, "controls the device", and rules of their own:
+
+- **Nothing runs by itself.** The module needs the grant like any other, and for the screen
+  the user must also turn on the accessibility service of ModuForge in the system settings —
+  a switch only the user can flip, which Android itself guards with a warning. Turning it off
+  removes the ability from every module at once. The camera needs Android's own camera
+  permission as well.
+- **Visible while in use.** A notification names the module while it uses the camera or the
+  screen, and Android shows its camera indicator during a photo.
+- **Recorded.** Every call that acts, and every photo, is an entry in the audit log with the
+  module, the call and its arguments; reading the screen is logged once a minute. Typed text
+  is never written to the log.
+- **Closed screens.** Whatever the grant, a module cannot read or operate the system
+  settings, the permission and installer dialogs, or ModuForge itself. Otherwise a module
+  could press "Allow" on its own consent dialog or switch off what guards it. Back and home
+  always work, so the user can always get out. Password fields are never read, typed into or
+  reported.
+- **Photos stay in the module.** A photo is written to the module's private storage; leaving
+  the phone needs `NETWORK_OUTBOUND` as well, which the user has seen.
+
+What this does not protect against: with the screen grant a module can do anything in the
+other apps a person could do by touch — send messages, make purchases in an open shopping app,
+read what is shown. It is as powerful as the accessibility services on the phone are by design.
+Grant it only to modules whose code you have read or whose author you trust, and treat a
+module that asks for it without a clear reason the way you would treat any app that asks for
+accessibility access.
+
 ### Updates of the app
 
 The only other time the host itself connects to the network is for its own updates, and

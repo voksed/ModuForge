@@ -197,6 +197,11 @@ internal fun snippets(runtime: ModuleRuntimeKind): List<Snippet> = if (runtime =
         Snippet("ui", "mf.ui.show([\n    { type: \"text\", text: \"Hello\" },\n    { type: \"button\", id: \"ok\", label: \"OK\" }\n]);\nvar event = mf.ui.wait();\n"),
         Snippet("date", "mf.date(\"%Y-%m-%d %H:%M\")"),
         Snippet("sleep", "mf.sleep(1);\n"),
+        Snippet("app", "mf.apps.launch(\"Calculator\");\nmf.screen.wait(\"7\", 8);\n"),
+        Snippet("tap", "mf.screen.tap(100, 200);\n"),
+        Snippet("click", "mf.screen.click(\"OK\");\n"),
+        Snippet("screen", "mf.screen.texts().forEach(function (t) { mf.log(t.text + \" \" + t.x + \",\" + t.y); });\n"),
+        Snippet("photo", "var photo = mf.camera.photo({ path: \"photo.jpg\", lens: \"back\" });\nmf.log(photo.width + \"x\" + photo.height);\n"),
     )
 } else {
     listOf(
@@ -212,6 +217,11 @@ internal fun snippets(runtime: ModuleRuntimeKind): List<Snippet> = if (runtime =
         Snippet("ui", "mf.ui.show({\n    { type = \"text\", text = \"Hello\" },\n    { type = \"button\", id = \"ok\", label = \"OK\" },\n})\nlocal event = mf.ui.wait()\n"),
         Snippet("date", "mf.date(\"%Y-%m-%d %H:%M\")"),
         Snippet("sleep", "mf.sleep(1)\n"),
+        Snippet("app", "mf.apps.launch(\"Calculator\")\nmf.screen.wait(\"7\", 8)\n"),
+        Snippet("tap", "mf.screen.tap(100, 200)\n"),
+        Snippet("click", "mf.screen.click(\"OK\")\n"),
+        Snippet("screen", "for _, t in ipairs(mf.screen.texts()) do\n    mf.log(t.text .. \" \" .. t.x .. \",\" .. t.y)\nend\n"),
+        Snippet("photo", "local photo = mf.camera.photo{ path = \"photo.jpg\", lens = \"back\" }\nif photo then mf.log(photo.width .. \"x\" .. photo.height) end\n"),
     )
 }
 
