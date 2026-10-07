@@ -38,6 +38,19 @@ class RunnerTest {
     }
 
     @Test
+    fun `a single script finds the scripts next to it`() {
+        val dir = temp.newFolder()
+        File(dir, "lib").mkdirs()
+        File(dir, "lib/text.js").writeText("exports.shout = function (s) { return s.toUpperCase() + '!'; };")
+        File(dir, "lib/text.lua").writeText("return { shout = function(s) return s:upper() .. '!' end }")
+        File(dir, "bot.js").writeText("mf.log(require('./lib/text').shout('js'));")
+        File(dir, "bot.lua").writeText("mf.log(require('lib.text').shout('lua'))")
+
+        assertEquals("JS!", execute(File(dir, "bot.js").path).first())
+        assertEquals("LUA!", execute(File(dir, "bot.lua").path).first())
+    }
+
+    @Test
     fun `a Lua project runs with storage that survives between runs and questions from the console`() {
         val dir = project(
             "lua", "main.lua", "\"FILE_SANDBOXED\", \"NOTIFICATIONS\"",

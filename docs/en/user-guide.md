@@ -2,32 +2,39 @@
 
 ## Installing a module
 
-A module comes as a file with the `.mfrg` extension.
+A module comes as a file with the `.mfrg` extension, or as a link to one.
 
-1. Copy the file to the phone.
-2. Open ModuForge, tab **Modules**, press **Import module (.mfrg)** and pick the file.
-3. Read the review screen:
+1. Get the module in any of these ways:
+   - open ModuForge, tab **Modules**, press **Import file** and pick the file;
+   - open the `.mfrg` file from a file manager, a download or a chat and choose ModuForge;
+   - open an install link (`moduforge://install…`) or scan its QR code with the camera.
+     The app shows the address and downloads the file only after you agree.
+2. Read the review screen:
    - **Signed by** — the fingerprint of the author's key. The name inside a package can be
      anything; the fingerprint cannot be faked. Compare it with the one the author
-     published.
+     published. When you came by an install link that names the author's key, the app has
+     compared it for you and says so; a file signed by anyone else is refused.
    - **Description** — the author's own words, not checked by anyone.
    - **Permissions it may ask for** — everything the module will ever be able to get.
-4. Press **Install**.
+3. Press **Install**.
 
 Installing grants nothing and runs nothing. A package that was altered after signing, or
 is not signed at all, is refused before this screen appears.
 
 ## A module of your own, without a computer
 
-**Create module** opens an editor: pick a starting point, name the module, edit the code
-and press **Save and run**. Details are in [Writing modules](writing-modules.md).
+**Create module** opens an editor: pick the language (Lua or JavaScript) and a starting
+point, name the module, edit the code and press **Save and run**. The editor colours the
+code, numbers the lines, inserts ready calls from the row of snippets and lets a module
+consist of several files. Details are in [Writing modules](writing-modules.md).
 
-A `.lua` file is imported with the same button as a package. It is not installed right
+A `.lua` or `.js` file is imported with the same button as a package. It is not installed right
 away; it opens in the editor, so you see the code and decide whether to save it as a
 module.
 
 Modules written on the phone carry no signature — you are their author. Their screen has
-an **Edit code** button. Such a module cannot be replaced by a package from a file, and a
+an **Edit code** button, and after an error a button that opens the editor on the line
+where it happened. Such a module cannot be replaced by a package from a file, and a
 signed module cannot be replaced by unsigned code.
 
 ## Running a module
@@ -42,7 +49,23 @@ Open the module from the list.
 | **Kill** | Removes the process at once, without asking the module |
 | **Start automatically** | Starts the module when the phone boots and whenever ModuForge starts |
 
-A script that finishes or fails stops by itself; the reason is in the audit log.
+A script that finishes or fails stops by itself; the reason is in the module output and
+in the audit log.
+
+### Settings of a module
+
+Many modules ask for something on their first start: a token, an address, how often to
+check. These values are kept and shown in the **Settings** card on the module's screen.
+Press **Change** to set a new value; a running module is restarted to pick it up. Secrets
+are shown as dots and are typed anew, never displayed. Clearing a value makes the module
+ask for it again, or use its built-in default.
+
+### Module output
+
+**Module output** shows what the module writes while it works, and why it stopped. The
+last 500 lines are kept, also after the app or the phone was restarted. **Share** sends the
+text to another app — for example to the module's author when something goes wrong;
+**Clear** empties it.
 
 ## Permissions
 
@@ -126,6 +149,24 @@ memory only and is lost when ModuForge restarts.
 
 **Reset appearance** returns everything to the defaults.
 
+## Developer mode
+
+For people who write modules on a computer. **Settings → For module developers →
+Developer mode** lets the author's computer send a module to this phone with one command
+(`mfrg push`): the module is installed and restarted without tapping through the app, and
+its output is shown on the computer.
+
+- It is off until you turn it on, and works only while the app is running.
+- The computer must know the **pairing token** shown on that screen. **New token** locks
+  out every computer paired before.
+- By default only a computer connected by USB can reach the phone. **Accept over Wi-Fi**
+  also accepts connections from the local network; switch it on only in a network you
+  trust.
+- A module that arrives this way is verified like any other and appears in the audit log.
+  It gets no permissions by itself: you still confirm them on the phone.
+
+If you do not write modules, leave it off.
+
 ## Troubleshooting
 
 | What you see | Why, and what to do |
@@ -133,6 +174,8 @@ memory only and is lost when ModuForge restarts.
 | "Not installed: signature does not match the package contents" | The file was changed after the author signed it. Get it again from the author |
 | "Not installed: package is not signed" | The file is not a finished package |
 | "…signed by a different key than the installed module" | This is not an update from the same author. Uninstall the old module first if you trust the new one |
+| "The downloaded package is signed by a different key than the link names" | The file behind the link is not from the author the link vouches for. Do not look for another way to install it; tell the author |
+| "Download failed" | No connection, or the file was moved. Ask the author for a fresh link |
 | "…runtime 'python' is not supported by this host" | The module needs a language this version cannot run |
 | The module stops when the screen turns off | It has no background permission, or Android's battery saving stopped the app |
 | Notifications do not appear | Notifications are turned off for ModuForge in the system settings |

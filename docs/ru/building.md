@@ -22,7 +22,7 @@ sdk.dir=/path/to/android-sdk
 |---|---|
 | `gradlew build` | Всё: юнит-тесты, lint, отладочный и релизный APK |
 | `gradlew :host-app:assembleDebug` | `host-app/build/outputs/apk/debug/host-app-debug.apk` |
-| `gradlew :host-app:installDebug` | Собирает и ставит на подключённое устройство |
+| `gradlew :host-app:installDebug` | Собирает и ставит на подключённое устройство. У отладочной сборки свой идентификатор, `dev.moduforge.host.debug`, поэтому она уживается с установленным релизом и не спорит с ним из-за подписи |
 | `gradlew :sdk:test :core:test :tools:packer:test :runtime-sandbox:testDebugUnitTest` | Юнит-тесты; устройство не нужно |
 | `gradlew :host-app:connectedDebugAndroidTest` | Тесты на устройстве. **После них приложение удаляется с устройства вместе со всеми данными** |
 | `gradlew :tools:packer:installDist` | Упаковщик `mfrg` в `tools/packer/build/install/mfrg` |

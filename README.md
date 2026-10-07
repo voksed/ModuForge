@@ -29,13 +29,19 @@ bot:run()
 - **Signed packages.** Modules come as `.mfrg` files. Before installing you see who
   signed the package, what it says about itself and everything it can ever ask for.
 - **Audit log.** Every installation, start, permission decision and network connection.
+- **Lua and JavaScript.** The same API in both, with libraries for Telegram bots,
+  settings and schedules; HTTP, raw connections, WebSocket, hashes, dates, a simple UI.
 - **Write a module on the phone.** Create module → pick a starting point → edit → run.
-  No computer, manifest or signature; permissions are worked out from the code.
-- **For authors.** A project wizard, a packer for distribution and Lua libraries for
-  Telegram bots, settings and schedules. Compiled Kotlin modules can show their own UI.
+  An editor with highlighting, snippets and several files; no computer, manifest or
+  signature; permissions are worked out from the code.
+- **For authors.** `mfrg run` executes a module on your computer, `mfrg push` sends it to
+  the phone with one command and prints its output, `mfrg pack` and `mfrg link` publish
+  it. Compiled Kotlin modules are supported too.
+- **Install by link.** A link (or QR code) carries the author's key, so the app verifies
+  the author instead of the user comparing fingerprints.
 - **Themes.** Light, dark, wallpaper or custom colours, palettes, corner shapes, text size.
 
-Not there yet: JavaScript and Python runtimes, a module catalogue, a Google Play release
+Not there yet: a Python runtime, a module catalogue, a Google Play release
 (Play does not allow apps that run downloaded code; ModuForge is distributed as an APK).
 
 ## Getting started
@@ -43,14 +49,16 @@ Not there yet: JavaScript and Python runtimes, a module catalogue, a Google Play
 | You want to | Go to |
 |---|---|
 | Use the app | [User guide](docs/en/user-guide.md) |
-| Write a module | [Writing modules](docs/en/writing-modules.md), [Lua API](docs/en/lua-api.md) |
+| Write a module | [Writing modules](docs/en/writing-modules.md), [cookbook](docs/en/cookbook.md), [Lua API](docs/en/lua-api.md), [JavaScript API](docs/en/js-api.md) |
 | Build from source | [Building](docs/en/building.md) |
 | Know what a module can do | [Security model](docs/en/security.md) |
 
 ```sh
 ./gradlew :host-app:assembleDebug        # the app
-./gradlew :tools:packer:installDist      # the mfrg packer
+./gradlew :tools:packer:installDist      # the mfrg tool
 mfrg new                                 # create a module project
+mfrg run my-module                       # run it on this computer
+mfrg push my-module                      # install on the phone, restart, show output
 mfrg pack my-module                      # build a signed .mfrg
 ```
 
@@ -62,9 +70,10 @@ The rest of this file is a technical overview; the documentation above is the re
 |---|---|---|
 | `:sdk` | Kotlin/JVM, published as `dev.moduforge:moduforge-sdk` | Stable API modules compile against: `Module`, `ModuleContext`, `Capability`, manifest, semver, declarative UI |
 | `:core` | Kotlin/JVM | Host logic without Android dependencies: `PermissionBroker`, `ModuleManager`, `AuditLog`, `ModuleRuntime` contract |
+| `:runtime-script` | Kotlin/JVM | Lua and JavaScript runtimes and the script API, shared by the app and `mfrg run` |
 | `:runtime-sandbox` | Android library | Isolated-process sandbox, AIDL protocol, module package store |
 | `:host-app` | Android application | Compose UI, Room storage, Hilt wiring, consent dialog |
-| `:tools:packer` | Kotlin/JVM CLI (`mfrg`) | Packs a folder into a signed `.mfrg` package |
+| `:tools:packer` | Kotlin/JVM CLI (`mfrg`) | Creates, runs, pushes and packs modules |
 | `:modules:hello` | Module package | Example module: lifecycle, UI, one permission |
 | `:modules:sandbox-probe` | Module package | Test module that tries to escape the sandbox; packed into the device tests only |
 
@@ -119,8 +128,8 @@ META-INF/MFRG.SIG   author's signature over everything else
 }
 ```
 
-`runtime` is `lua` or `dex` today; `js` and `python` are reserved and rejected at
-installation until their runtimes exist. For a script runtime `entry` is the main script:
+`runtime` is `lua`, `js` or `dex`; `python` is reserved and rejected at installation
+until its runtime exists. For a script runtime `entry` is the main script:
 it runs on its own thread from start until the module is stopped.
 
 ### Packing
@@ -129,8 +138,11 @@ it runs on its own thread from start until the module is stopped.
 ./gradlew :tools:packer:installDist          # builds tools/packer/build/install/mfrg
 # mfrg.cmd in the project root runs it; Java 17+ must be installed
 mfrg new                                     # asks a few questions, creates a project
+mfrg run my-bot                              # runs on this computer, real network
+mfrg push my-bot                             # installs on the phone and restarts the module
 mfrg pack my-bot                             # -> <id>-<version>.mfrg
 mfrg verify my-bot-1.0.0.mfrg
+mfrg link my-bot-1.0.0.mfrg https://...      # install link carrying your key's fingerprint
 ```
 
 `mfrg new` offers starting points (Telegram bot, page watcher, empty script). `pack` signs
@@ -144,7 +156,10 @@ inside a package. For a compiled module add `--dex path/to/module.apk`.
 The key's fingerprint is what users see as the signer. There is no central authority:
 publish the fingerprint where your users can compare it.
 
-### Lua API
+### Script API
+
+The table lists the core calls in their Lua form; the full references are
+[Lua API](docs/en/lua-api.md) and [JavaScript API](docs/en/js-api.md).
 
 | Call | Meaning |
 |---|---|
@@ -152,7 +167,10 @@ publish the fingerprint where your users can compare it.
 | `mf.request(capability, reason [, target])` | Ask for a permission; returns `granted, denialReason`; waits for the user |
 | `mf.granted(capability [, target])` | Check without asking |
 | `mf.sleep(seconds)` | Pause |
-| `mf.http{url=, method=, headers=, body=}` | HTTP(S) request; returns `{status, body, headers}`. Redirects are returned, not followed; bodies up to 8 MB |
+| `mf.http{url=, method=, headers=, body=, form=, files=}` | HTTP(S) request; returns `{status, body, headers, url}`. Follows redirects; bodies up to 8 MB |
+| `mf.connect(host, port [, {tls=}])`, `mf.websocket(url)` | Raw TCP/TLS connection; WebSocket |
+| `mf.date(format)`, `mf.hash.*`, `mf.hmac.*`, `mf.base64.*`, `mf.random(n)` | Dates, digests, encodings, random bytes |
+| `mf.ui.show(tree)`, `mf.ui.wait()` | A simple interface drawn by the host; events back |
 | `mf.storage.read(path)` / `.write(path, data)` / `.delete(path)` / `.list()` | Module files |
 | `mf.notify(title [, text])` | Show a notification |
 | `mf.ask(question [, secret])` | Ask the user to type an answer; returns it, or `nil` when dismissed |
@@ -161,14 +179,15 @@ publish the fingerprint where your users can compare it.
 | `mf.id`, `mf.name`, `mf.version` | Manifest fields |
 
 Libraries shipped with the runtime: `require("mf.telegram")` (bot framework with commands,
-handlers and keyboards), `require("mf.config")` (settings asked once and remembered),
+handlers and keyboards), `require("mf.config")` (settings asked once, remembered and editable by the user in the app),
 `require("mf.schedule")` (periodic tasks).
 
 Before a module starts, the host offers the user every declared permission it does not hold
 yet on one screen, so scripts do not have to request them.
 
 Network and storage calls return `nil, message` on failure, including a missing grant.
-`require` loads other files of the package. `os`, `io` and `luajava` are not available.
+`require` loads other files of the package. `io` and `luajava` are not available; of `os`
+only `time`, `date` and `clock`. In JavaScript failures are thrown as `Error`.
 `examples/lua-hello` is a complete script module. `examples/telegram-echo-bot` is a working
 Telegram bot: it asks for the token on first start, keeps it in module storage and
 long-polls the Bot API.

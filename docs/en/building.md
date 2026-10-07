@@ -22,7 +22,7 @@ The build uses Gradle 9.8 through the wrapper, Android Gradle plugin 9.4, Kotlin
 |---|---|
 | `gradlew build` | Everything: unit tests, lint, debug and release APKs |
 | `gradlew :host-app:assembleDebug` | `host-app/build/outputs/apk/debug/host-app-debug.apk` |
-| `gradlew :host-app:installDebug` | Builds and installs on the connected device |
+| `gradlew :host-app:installDebug` | Builds and installs on the connected device. The debug build has its own id, `dev.moduforge.host.debug`, so it lives next to an installed release without clashing over the signature |
 | `gradlew :sdk:test :core:test :tools:packer:test :runtime-sandbox:testDebugUnitTest` | Unit tests; no device needed |
 | `gradlew :host-app:connectedDebugAndroidTest` | Device tests. **Uninstalls the app from the device afterwards, with all its data** |
 | `gradlew :tools:packer:installDist` | The `mfrg` packer in `tools/packer/build/install/mfrg` |

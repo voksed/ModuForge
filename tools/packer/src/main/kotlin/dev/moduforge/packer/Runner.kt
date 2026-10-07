@@ -64,6 +64,10 @@ internal fun runModule(target: File, options: Options, readLine: () -> String?, 
     return ""
 }
 
+private const val NEIGHBOUR_DEPTH = 4
+private const val MAX_NEIGHBOUR_BYTES = 1024 * 1024L
+private const val MAX_NEIGHBOURS = 500
+
 private class Project(val manifest: ModuleManifest, val files: Map<String, ByteArray>, val root: File)
 
 /** A project directory with `moduforge.json`, or a single script with a manifest worked out from its code. */
@@ -73,7 +77,16 @@ private fun loadProject(target: File): Project {
         val source = target.readText()
         val name = target.nameWithoutExtension
         val manifest = LocalModules.manifest(LocalModules.idFor(name) { false }, name, source, LocalModules.AVAILABLE.toSet(), null, runtime)
-        return Project(manifest, mapOf(manifest.entry to source.toByteArray()), target.absoluteFile.parentFile)
+        val folder = target.absoluteFile.parentFile
+        // Other scripts of the same language next to it, so that require() finds them.
+        val neighbours = folder.walkTopDown().maxDepth(NEIGHBOUR_DEPTH)
+            .onEnter { it == folder || !it.name.startsWith(".") && it.name != "node_modules" }
+            .filter { it.isFile && it != target.absoluteFile && it.extension == target.extension && it.length() <= MAX_NEIGHBOUR_BYTES }
+            .map { it.relativeTo(folder).invariantSeparatorsPath to it }
+            .filter { (path, _) -> path != manifest.entry && ModuleManifests.isRelativePath(path) }
+            .take(MAX_NEIGHBOURS)
+            .associate { (path, file) -> path to file.readBytes() }
+        return Project(manifest, neighbours + (manifest.entry to source.toByteArray()), folder)
     }
     val manifestFile = File(target, ModulePackageFormat.MANIFEST)
     if (!manifestFile.isFile) throw UsageError("$manifestFile not found; pass a project directory or a .lua/.js file")

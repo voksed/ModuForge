@@ -71,6 +71,41 @@ never installed silently: the script opens in the editor, where the user sees th
 saves it. They run in the same sandbox behind the same permissions, which are still asked
 for before the first start. An unsigned module and a signed one cannot replace each other.
 
+### Install links
+
+A `moduforge://install` link names an HTTPS address and, optionally, the fingerprint of the
+author's key. Opening one never installs anything by itself:
+
+- the app shows the address and downloads only after the user agrees — this is the one
+  case where the host itself connects to the network, and only then;
+- only `https://` addresses are accepted, and the file is limited to 64 MB;
+- the downloaded file goes through the same verification and the same review screen as a
+  file picked by hand;
+- when the link names a key, a package signed by any other key is refused. The server that
+  hosts the file therefore cannot swap it for its own.
+
+A link is as trustworthy as the place you got it from: a link with a fingerprint moves the
+question "is this the author's key?" to "is this the author's link?".
+
+### Developer mode
+
+Developer mode opens a connection point through which a computer can install a package and
+restart its module without the review screen. It exists to shorten the author's edit–run
+cycle and is built to be useless to anyone else:
+
+- off by default; the user turns it on in the settings and can turn it off at any time;
+- by default it listens on the device itself only, reachable through a USB cable with
+  debugging enabled; accepting connections from the local network is a separate switch;
+- the computer must know a pairing token shown on the phone. The token is never sent: each
+  request is authenticated with an HMAC over a fresh one-time challenge and the package, so
+  a recorded exchange can be neither read for the token nor replayed;
+- a pushed package passes the same signature and manifest checks and the same signer rules
+  as any other, and its installation is written to the audit log;
+- nothing is granted: permissions are still confirmed on the phone.
+
+What it does give up is the review screen for packages sent by whoever holds the token. On
+a shared or hostile Wi-Fi network leave the Wi-Fi switch off.
+
 ## What the user sees
 
 - **Before installation:** signer fingerprint, the author's description, every permission
@@ -100,8 +135,9 @@ Stated plainly, so that nobody relies on more than there is:
   recorded at all.
 - **A question from a module is a phishing surface.** The dialog warns the user, but cannot
   stop them from typing a password that the module should not get.
-- **Author identity rests on the user comparing fingerprints.** A user who installs without
-  checking can be given a look-alike module signed by someone else.
+- **Author identity rests on the user comparing fingerprints,** or on trusting the place
+  an install link came from. A user who installs without checking can be given a
+  look-alike module signed by someone else.
 - **Rooted devices and a compromised OS are out of scope.** Isolation and the Keystore are
   only as strong as the system underneath.
 - **Resource use is bounded only loosely.** Storage, connections and message sizes are

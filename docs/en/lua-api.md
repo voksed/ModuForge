@@ -2,7 +2,11 @@
 
 Everything a script can reach is in the global table `mf` and in the libraries loaded with
 `require("mf.…")`. The language is Lua 5.2 with `string`, `table`, `math`, `coroutine` and
-`bit32`; there is no `os`, no `io` and no file system.
+`bit32`. Of `os` only `os.time()`, `os.date()` and `os.clock()` exist; there is no `io` and
+no file system.
+
+The same API in JavaScript is described in the [JavaScript API reference](js-api.md); short
+ready-made examples are in the [cookbook](cookbook.md).
 
 ## Conventions
 
@@ -28,6 +32,19 @@ Everything a script can reach is in the global table `mf` and in the libraries l
 | `print(...)` | Same as `mf.log` |
 | `mf.sleep(seconds)` | Pauses the script. Fractions are allowed |
 | `mf.time()` | Seconds since 1970-01-01 UTC, with fractions |
+| `mf.date([format [, time]])` | The moment `time` (default: now) as text |
+| `os.time()`, `os.date(...)`, `os.clock()` | Whole seconds; the same as `mf.date`; seconds of a steady clock for measuring durations |
+
+`mf.date` understands the usual `strftime` directives: `%Y %y %m %d %H %M %S %j %a %A %b %B
+%p %Z %z %%`. The device's time zone is used; start the format with `!` for UTC. Without a
+format the result looks like `2026-03-01 14:05:09`.
+
+```lua
+mf.date("%d.%m.%Y %H:%M")          -- 01.03.2026 14:05
+mf.date("!%Y-%m-%dT%H:%M:%SZ")     -- 2026-03-01T11:05:09Z
+local t = mf.date("*t")            -- { year, month, day, hour, min, sec, wday, yday }
+if t.wday == 1 then mf.log("Sunday") end
+```
 
 ## Permissions
 
@@ -59,6 +76,7 @@ local response, err = mf.http{
     method = "POST",                                   -- default "GET"
     headers = { ["Content-Type"] = "application/json" },
     body = mf.json.encode({ name = "x" }),
+    redirects = 5,                                     -- default 5; 0 returns the 3xx answer
 }
 if response then
     mf.log(response.status, #response.body, response.headers["content-type"])
@@ -70,16 +88,86 @@ end
 | `status` | HTTP status code |
 | `body` | Response body as a string, at most 8 MB |
 | `headers` | Table of response headers; names are lowercase |
+| `url` | Address the answer came from, after redirects |
+
+Instead of `body` a request can carry a form or files; the method defaults to `POST` then.
+
+```lua
+-- application/x-www-form-urlencoded
+mf.http{ url = "https://example.com/login", form = { user = "me", code = "1234" } }
+
+-- multipart/form-data: form fields plus files
+mf.http{
+    url = "https://example.com/upload",
+    form = { caption = "Report" },
+    files = {
+        document = { filename = "report.txt", type = "text/plain", content = text },
+    },
+}
+```
+
+A file is a table with `content` and optionally `filename`, `type` and `field`; the key in
+`files` is the field name unless `field` is given.
 
 Things to know:
 
 - Only `http://` and `https://` addresses on the public internet. The phone itself and the
   local network are refused: `destination is not a public internet address`.
 - HTTPS certificates are verified by the host. A bad certificate is an error.
-- Redirects are returned to you as a 3xx status; they are not followed.
+- Up to five redirects are followed (at most 10 with `redirects`). `Authorization` and
+  `Cookie` headers are not sent on to a different host.
 - One request per connection. A long-poll request simply waits for the server.
 - Each request is recorded in the user's audit log with the host name and port.
 - At most 16 connections may be open at once.
+
+### `mf.connect(host, port [, options])` — a raw TCP connection
+
+```lua
+local conn = assert(mf.connect("irc.example.org", 6697, { tls = true }))
+conn:write("NICK bot\r\n")
+local line, err = conn:read_line(30)        -- nil, "timeout" when nothing came in 30 s
+conn:close()
+```
+
+| Call | Returns |
+|---|---|
+| `conn:read([max [, timeout]])` | Whatever has arrived, at most `max` bytes (default 16384) |
+| `conn:read_exactly(count [, timeout])` | Exactly `count` bytes |
+| `conn:read_line([timeout])` | One line without its line break |
+| `conn:write(data)` | `true` |
+| `conn:close()` | |
+
+Reads wait until data arrives. With a `timeout` in seconds they give `nil, "timeout"` when
+nothing came in time; `nil, "closed"` means the other side ended the connection.
+
+### `mf.websocket(url [, headers])`
+
+```lua
+local ws = assert(mf.websocket("wss://stream.example.com/feed"))
+ws:send(mf.json.encode({ subscribe = "news" }))
+while true do
+    local message, info = ws:receive(60)
+    if message then
+        mf.log(message)
+    elseif info == "timeout" then
+        ws:ping()                            -- nothing for a minute: check the line
+    else
+        break                                -- closed
+    end
+end
+```
+
+| Call | Returns |
+|---|---|
+| `ws:send(text)` | `true`. Sends a text message |
+| `ws:send_binary(data)` | `true`. Sends a binary message |
+| `ws:receive([timeout])` | The message and `true` for text, `false` for binary; `nil, "timeout"`; `nil, "closed"` |
+| `ws:ping()` | `true` |
+| `ws:close()` | |
+
+Pings from the server are answered for you and fragmented messages arrive whole. Both
+`ws://` and `wss://` work. The same rules as for `mf.http` apply: public addresses only,
+certificates verified, every connection in the audit log.
 
 ## Storage — `FILE_SANDBOXED`
 
@@ -131,6 +219,67 @@ Encoding: a table whose keys are exactly `1..n` becomes an array, any other tabl
 object. An empty table becomes `{}`. Whole numbers are written without a fraction.
 Functions and tables nested deeper than 64 levels cannot be encoded.
 
+## Hashes and encodings
+
+| Call | Returns |
+|---|---|
+| `mf.hash.sha256(data [, raw])` | Hex text of the digest; the bytes themselves when `raw` is `true`. Also `md5`, `sha1`, `sha512` |
+| `mf.hmac.sha256(key, data [, raw])` | HMAC, the same way. Also `md5`, `sha1`, `sha512` |
+| `mf.base64.encode(data [, url])` | Base64 text; `true` selects the URL-safe alphabet without padding |
+| `mf.base64.decode(text)` | Bytes. Both alphabets are accepted |
+| `mf.hex.encode(data)`, `mf.hex.decode(text)` | Hex text and back |
+| `mf.random(count)` | `count` cryptographically random bytes, up to 1024 |
+
+```lua
+local signature = mf.hmac.sha256(secret, timestamp .. body)
+local nonce = mf.hex.encode(mf.random(16))
+```
+
+## Interface
+
+A script can show a simple interface on the module's screen and react to it. No permission
+is needed. In a packed module put `"ui": "compose"` into the manifest; modules written in
+the app get it automatically.
+
+```lua
+local count = 0
+local function draw()
+    mf.ui.show({
+        { type = "text", text = "Counter", style = "title" },
+        { type = "text", text = "Value: " .. count },
+        { type = "row", children = {
+            { type = "button", id = "minus", label = "−" },
+            { type = "button", id = "plus", label = "+" },
+        } },
+        { type = "field", id = "note", label = "Note", value = "" },
+    })
+end
+
+draw()
+while true do
+    local event = mf.ui.wait()               -- waits for a press or typing
+    if event.type == "click" then
+        count = count + (event.id == "plus" and 1 or -1)
+        draw()
+    elseif event.type == "text" then
+        mf.log(event.id .. " = " .. event.value)
+    end
+end
+```
+
+| Call | Description |
+|---|---|
+| `mf.ui.show(tree)` | Replaces what is shown. A list is a column |
+| `mf.ui.wait([timeout])` | Next event: `{ type = "click", id }` or `{ type = "text", id, value }`; `nil` after `timeout` seconds |
+| `mf.ui.clear()` | Removes the interface |
+
+| Element | Fields |
+|---|---|
+| `text` | `text`, `style`: `title`, `body` (default), `caption`, `code`. A plain string is a text element too |
+| `button` | `id`, `label`, `enabled` (default `true`) |
+| `field` | `id`, `label`, `value` |
+| `row`, `column` | `children` |
+
 ## Library `mf.config`
 
 Settings kept in module storage (`config.json`). Needs `FILE_SANDBOXED`.
@@ -153,9 +302,25 @@ Options of `get`:
 | Option | Effect |
 |---|---|
 | `ask` | Question to put to the user. The answer is trimmed; an empty answer counts as none |
+| `label` | Name of the value on the module's screen. Defaults to the question |
 | `secret` | Hide what the user types |
 | `default` | Value to use when nothing is stored and nothing was answered |
 | `save = false` | Do not store the asked or default value |
+
+**Settings the user can change.** Every value read with `ask` or `label` appears in the
+**Settings** card on the module's screen. The user can change it there at any time; a
+running module is restarted to pick the change up, and clearing a value makes the module
+ask again or fall back to its default. So this is all a module needs for adjustable
+settings:
+
+```lua
+local token    = config.get("token", { ask = "API token", secret = true })
+local interval = config.get("interval", { label = "Seconds between checks", default = 300 })
+```
+
+Values written with `config.set` and never given a label (counters, the last seen id) are
+the module's own and are not shown. A number or `true`/`false` stays one when the user
+edits it; anything typed into a text value arrives as a string.
 
 ## Library `mf.schedule`
 
