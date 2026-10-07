@@ -4,7 +4,21 @@
 скрипта на Lua, он может реагировать на каждый шаг жизненного цикла и показывать
 собственный интерфейс. Работает он в той же песочнице и получает те же сервисы хоста.
 
-Образец — `modules/hello` в этом репозитории.
+Начните с шаблона: папка [`templates/kotlin-module`](../../templates/kotlin-module) — полный
+проект, который собирается сам по себе, вне этого репозитория. `modules/hello` — пример
+побольше, он проходит весь жизненный цикл.
+
+```
+gradlew :sdk:publishToMavenLocal     один раз, в клоне этого репозитория: делает SDK доступным
+cd моя-копия-шаблона
+gradlew assembleRelease
+mfrg push src/main/assets --dex build/outputs/apk/release/my-module-release-unsigned.apk
+```
+
+`mfrg push` ставит модуль на телефон и перезапускает его одним шагом — так же, как для
+скриптов (см. [Как писать модули](writing-modules.md#отправить-на-телефон-mfrg-push));
+первая отправка модуля, которому нужны разрешения, ждёт, пока вы один раз нажмёте
+«Запустить» в приложении.
 
 ## Проект
 
@@ -42,8 +56,10 @@ dependencies {
 ```
 
 Вне этого репозитория опубликуйте SDK в локальный Maven-репозиторий командой
-`gradlew :sdk:publishToMavenLocal` и подключите `dev.moduforge:moduforge-sdk:1.0.0`
-(`compileOnly`). В публичных репозиториях SDK не размещён.
+`gradlew :sdk:publishToMavenLocal`, добавьте `mavenLocal()` в репозитории и подключите
+`dev.moduforge:moduforge-sdk:1.0.0` (`compileOnly`). В публичный репозиторий SDK не
+опубликован. Всё это уже сделано в шаблоне; он же добавляет плагин Kotlin для Gradle с
+`apply false`, благодаря чему сборка использует ту же версию Kotlin, что и SDK.
 
 Манифест лежит в `src/main/assets/moduforge.json`: `"runtime": "dex"` (или без поля
 `runtime`) и имя класса в `entry`. Поля описаны в разделе

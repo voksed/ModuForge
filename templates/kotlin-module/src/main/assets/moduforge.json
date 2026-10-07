@@ -1,0 +1,12 @@
+{
+  "id": "com.example.mymodule",
+  "name": "My module",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "entry": "com.example.mymodule.MyModule",
+  "permissions": ["NOTIFICATIONS"],
+  "permissionReasons": { "NOTIFICATIONS": "Tells you when the button was pressed." },
+  "ui": "compose",
+  "author": "Your name",
+  "description": "What the module does, in a sentence or two."
+}

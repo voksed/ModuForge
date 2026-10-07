@@ -4,7 +4,20 @@ A compiled module is a class that implements `dev.moduforge.sdk.Module`. Compare
 Lua script it can react to every lifecycle step and show its own interface. It runs in the
 same sandbox and gets the same host services.
 
-The template is `modules/hello` in this repository.
+Start from the template: the folder [`templates/kotlin-module`](../../templates/kotlin-module)
+is a complete project that builds on its own, outside this repository. `modules/hello` is a
+larger example that walks through the whole lifecycle.
+
+```
+gradlew :sdk:publishToMavenLocal     once, in a clone of this repository: makes the SDK available
+cd my-copy-of-the-template
+gradlew assembleRelease
+mfrg push src/main/assets --dex build/outputs/apk/release/my-module-release-unsigned.apk
+```
+
+`mfrg push` installs the module on the phone and restarts it in one step, the same as for
+scripts (see [Writing modules](writing-modules.md#send-it-to-the-phone-mfrg-push)); the
+first push of a module that needs permissions waits until you press Start once in the app.
 
 ## Project
 
@@ -42,8 +55,10 @@ dependencies {
 ```
 
 Outside this repository, publish the SDK to your local Maven repository with
-`gradlew :sdk:publishToMavenLocal` and depend on `dev.moduforge:moduforge-sdk:1.0.0`
-(`compileOnly`). The SDK is not published to a public repository.
+`gradlew :sdk:publishToMavenLocal`, add `mavenLocal()` to the repositories and depend on
+`dev.moduforge:moduforge-sdk:1.0.0` (`compileOnly`). The SDK is not published to a public
+repository. The template does all of this; it also adds the Kotlin Gradle plugin with
+`apply false`, which makes the build use the same Kotlin version as the SDK.
 
 The manifest lives in `src/main/assets/moduforge.json`, with `"runtime": "dex"` (or no
 `runtime` field) and the class name in `entry`. Fields are described in
