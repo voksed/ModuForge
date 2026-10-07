@@ -10,7 +10,7 @@ in its own sandbox. A module can do only what you allowed, and everything it doe
 network is written to a log you can read. The app does nothing on its own: every feature
 is a module.
 
-Version 0.1.0. Android 8.0 or newer.
+Version 1.0.0. Android 8.0 or newer.
 
 ```lua
 -- A complete Telegram bot. The token is asked for on the first start.
