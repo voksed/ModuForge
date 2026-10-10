@@ -54,16 +54,53 @@ internal fun createProject(target: File?, ask: (question: String, default: Strin
     dir.mkdirs()
     manifestFile.writeText(prettyManifest(manifest))
     File(dir, manifest.entry).writeText(template.script)
+    writeEditorSupport(dir, language)
 
     return """
         Created ${dir.path}
           ${ModulePackageFormat.MANIFEST}   what the module is and which permissions it may get
           ${manifest.entry.padEnd(16)} the script that runs when the module starts
 
-        Next: edit ${manifest.entry}, then run
-          mfrg pack ${dir.path}
-        and import the resulting .${ModulePackageFormat.EXTENSION} file in the app.
+        Next: edit ${manifest.entry}, then
+          mfrg run ${dir.path} --watch     try it on this computer; it restarts on every save
+          mfrg push ${dir.path} --watch    the same on your phone (developer mode in the app)
+          mfrg pack ${dir.path}            a signed .${ModulePackageFormat.EXTENSION} file to share
+        The $EDITOR_DIRECTORY folder holds type declarations that give an editor completion for mf.
     """.trimIndent()
+}
+
+/**
+ * Type declarations of `mf` and the editor settings that pick them up, so that completion works in VS Code
+ * (`.mf` and `.vscode` are never packed).
+ */
+private fun writeEditorSupport(dir: File, language: ModuleRuntimeKind) {
+    val file = when (language) {
+        ModuleRuntimeKind.JS -> "mf.d.ts"
+        ModuleRuntimeKind.PYTHON -> "mf.pyi"
+        ModuleRuntimeKind.LUA -> "mf.lua"
+        ModuleRuntimeKind.DEX -> return
+    }
+    val text = object {}.javaClass.getResourceAsStream("/typings/$file")?.use { it.readBytes() } ?: return
+    File(dir, "$EDITOR_DIRECTORY/$file").apply { parentFile.mkdirs() }.writeBytes(text)
+    val settings = when (language) {
+        ModuleRuntimeKind.PYTHON -> """{ "python.analysis.extraPaths": ["$EDITOR_DIRECTORY"] }"""
+        ModuleRuntimeKind.LUA -> """{ "Lua.workspace.library": ["$EDITOR_DIRECTORY"], "Lua.diagnostics.globals": ["mf"] }"""
+        else -> null
+    }
+    if (settings != null) File(dir, ".vscode/settings.json").apply { parentFile.mkdirs() }.writeText(settings + "\n")
+    if (language == ModuleRuntimeKind.JS) {
+        File(dir, "jsconfig.json").writeText("""{ "include": ["*.js", "$EDITOR_DIRECTORY/mf.d.ts"] }""" + "\n")
+    }
+    val tasks = """
+        {
+          "version": "2.0.0",
+          "tasks": [
+            { "label": "ModuForge: run on this computer", "type": "shell", "command": "mfrg run . --watch", "problemMatcher": [] },
+            { "label": "ModuForge: push to the phone", "type": "shell", "command": "mfrg push . --watch", "problemMatcher": [] }
+          ]
+        }
+    """.trimIndent()
+    File(dir, ".vscode/tasks.json").apply { parentFile.mkdirs() }.writeText(tasks + "\n")
 }
 
 /** The manifest as authors will read and edit it: one field per line, stable order. */

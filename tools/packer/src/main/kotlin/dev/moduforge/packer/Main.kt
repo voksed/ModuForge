@@ -18,17 +18,19 @@ private const val USAGE = """mfrg - builds ModuForge module packages
   mfrg new [dir]
       Asks a few questions and creates a ready-to-pack module project.
 
-  mfrg run <dir-or-script> [--allow-local] [--deny <PERMISSION>[,<PERMISSION>...]]
+  mfrg run <dir-or-script> [--watch] [--allow-local] [--deny <PERMISSION>[,<PERMISSION>...]]
       Runs a Lua, JavaScript or Python module on this computer, with real network access and its
       storage in .mfrg-run/ next to the code. Permissions declared in the manifest count as
       granted; --deny shows how the module behaves when the user refuses one. A single script
-      needs no manifest. Press Ctrl+C to stop.
+      needs no manifest. With --watch the module restarts whenever a file is saved. Press
+      Ctrl+C to stop.
 
-  mfrg push [dir] [--token <token>] [--host <phone address>|usb] [--no-follow]
+  mfrg push [dir] [--watch] [--token <token>] [--host <phone address>|usb] [--no-follow]
       Packs the module, sends it to the app on your phone, which installs it and restarts the
       module, and prints the module's output. Turn on developer mode in the app's settings
       first; it shows the token. Over USB nothing else is needed (adb forwards the port); for
       Wi-Fi pass the phone's address. Token and address are remembered after the first push.
+      With --watch it pushes again whenever a file is saved.
 
   mfrg pack <dir|script> [--key <key-file>] [--out <file.mfrg>] [--dex <apk-or-dex>]
       Packs <dir> (moduforge.json plus every other file as module code) into a signed package.
@@ -88,7 +90,10 @@ fun run(args: List<String>, readLine: () -> String? = ::readlnOrNull, print: (St
         "keygen" -> keygen(File(options.positional(0, "key file")))
         "init" -> init(File(options.positional(0, "directory")), options)
         "pack" -> pack(File(options.positional(0, "directory")), options)
-        "push" -> push(File(options.positionalOrNull(0) ?: "."), options, print)
+        "push" -> {
+            val dir = File(options.positionalOrNull(0) ?: ".")
+            if (options.switch("watch")) watchPush(dir, options, print) else push(dir, options, print)
+        }
         "verify" -> verify(File(options.positional(0, "package file")))
         "link" -> link(File(options.positional(0, "package file")), options.positional(1, "https address of the uploaded package"))
         else -> USAGE
@@ -129,7 +134,7 @@ internal class Options(args: List<String>) {
 
     private companion object {
         /** Options that take no value. */
-        val SWITCHES = setOf("allow-local", "no-follow")
+        val SWITCHES = setOf("allow-local", "no-follow", "watch")
     }
 }
 
@@ -172,8 +177,11 @@ private fun init(dir: File, options: Options): String {
 /** Directory `mfrg run` keeps a module's storage in; never part of a package. */
 internal const val RUN_DIRECTORY = ".mfrg-run"
 
-private val SKIPPED_DIRECTORIES =
-    setOf(".git", ".hg", ".svn", ".idea", ".vscode", "__pycache__", "node_modules", "venv", ".venv", RUN_DIRECTORY)
+/** Where `mfrg new` puts the type declarations for editors; never part of a package. */
+internal const val EDITOR_DIRECTORY = ".mf"
+
+internal val SKIPPED_DIRECTORIES =
+    setOf(".git", ".hg", ".svn", ".idea", ".vscode", "__pycache__", "node_modules", "venv", ".venv", RUN_DIRECTORY, EDITOR_DIRECTORY)
 private val SECRET_FILE = Regex("""(?i).*\.(session|session-journal)$|^\.env(\..*)?$""")
 
 /**
@@ -185,7 +193,7 @@ internal fun projectFiles(dir: File, skippedSecrets: MutableList<String> = mutab
     val files = sortedMapOf<String, ByteArray>()
     dir.walkTopDown()
         .onEnter { it == dir || it.name !in SKIPPED_DIRECTORIES }
-        .filter { it.isFile && it != manifestFile && it.absoluteFile != exclude && it.extension != ModulePackageFormat.EXTENSION }
+        .filter { it.isFile && it != manifestFile && it.absoluteFile != exclude && it.extension != ModulePackageFormat.EXTENSION && it.name != "jsconfig.json" }
         .forEach { file ->
             val path = file.relativeTo(dir).invariantSeparatorsPath
             when {

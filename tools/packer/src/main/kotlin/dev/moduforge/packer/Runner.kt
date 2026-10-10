@@ -44,6 +44,26 @@ import javax.net.ssl.SSLSocketFactory
  * @throws ScriptFailed when the script failed; its message was already printed.
  */
 internal fun runModule(target: File, options: Options, readLine: () -> String?, print: (String) -> Unit): String {
+    if (!options.switch("watch")) return runOnce(target, options, readLine, print) { false }
+    print("watching $target: the module restarts when a file is saved (Ctrl+C to stop)")
+    while (true) {
+        val before = fingerprint(target)
+        try {
+            runOnce(target, options, readLine, print) { fingerprint(target) != before }
+        } catch (e: UsageError) {
+            print("error: ${e.message}")
+        } catch (e: ScriptFailed) {
+            // Already printed; the next save runs it again.
+        }
+        while (fingerprint(target) == before) Thread.sleep(WATCH_POLL_MS)
+        print("--- reloaded ---")
+    }
+}
+
+private const val WATCH_POLL_MS = 400L
+
+/** @param changed asked while the module runs; when true the module is stopped and the call returns. */
+private fun runOnce(target: File, options: Options, readLine: () -> String?, print: (String) -> Unit, changed: () -> Boolean): String {
     val project = loadProject(target)
     if (project.manifest.runtime !in ScriptRuntimes.SUPPORTED) {
         throw UsageError("only script modules run on a desktop; this one is '${project.manifest.runtime.name.lowercase()}'")
@@ -59,7 +79,12 @@ internal fun runModule(target: File, options: Options, readLine: () -> String?, 
 
     val module = ScriptRuntimes.create(project.manifest.runtime, project.files, project.manifest.entry)
     runBlocking { module.onStart(host) }
-    host.finished.await()
+    while (!host.finished.await(WATCH_POLL_MS, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+        if (changed()) {
+            runBlocking { module.onStop(host) }
+            return ""
+        }
+    }
     val reason = host.stopReason
     // The error was already printed while the module ran; only the exit code is left to report.
     if (reason.startsWith("script failed")) throw ScriptFailed(reason)
