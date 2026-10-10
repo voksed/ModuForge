@@ -43,12 +43,16 @@ Standard library modules: `json`, `math`, `time`, `random`, `re`, `string`, `has
 `print` writes a line to the module output, like `mf.log`. `input(prompt)` asks the user, like
 `mf.ask`. `sys.exit()` ends the script.
 
+`mf` is there without an import, as in Lua and JavaScript; `import mf` also works.
+
+Two familiar names are thin layers over `mf`: `import requests` (`get`, `post`, `Session`, `Response` with `status_code`, `text`, `json()`, `raise_for_status()`, the usual exceptions) works over `mf.http` and needs `NETWORK_OUTBOUND`; `open(path, mode)` (`r`, `w`, `a`, `x`, with `b` for bytes) works over `mf.storage`, so it needs `FILE_SANDBOXED` and sees only the module's own files.
+
 ### What is not there
 
-- Packages from PyPI and C extensions (`numpy`, `requests`, …). Use `mf.http` instead of
-  `requests`.
-- `async`/`await` and `asyncio`; `threading`, `subprocess`, `socket`, `os`, `open()`. Calls
-  wait for their result, and files live in `mf.storage`. Importing them says so.
+- Packages from PyPI and C extensions (`numpy`, …); of `requests` only the small layer above
+  exists.
+- `async`/`await` and `asyncio`; `threading`, `subprocess`, `socket`, `os`. Calls wait for
+  their result, and files live in `mf.storage`. Importing them says so.
 - Subclassing built-in types (`class MyList(list)`), metaclasses, `__slots__`, `match`,
   type checking of annotations (annotations are accepted and ignored), `eval`/`exec`.
 - Speed: this is an interpreter written for scripts that wait for the network and the user.

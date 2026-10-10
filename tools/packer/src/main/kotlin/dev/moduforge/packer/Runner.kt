@@ -40,7 +40,8 @@ import javax.net.ssl.SSLSocketFactory
  * works only when its permission is declared, and the network reaches only public addresses.
  *
  * @return an empty report: everything worth saying was printed while the module ran.
- * @throws UsageError when the module cannot be run or its script failed.
+ * @throws UsageError when the module cannot be run.
+ * @throws ScriptFailed when the script failed; its message was already printed.
  */
 internal fun runModule(target: File, options: Options, readLine: () -> String?, print: (String) -> Unit): String {
     val project = loadProject(target)
@@ -60,7 +61,8 @@ internal fun runModule(target: File, options: Options, readLine: () -> String?, 
     runBlocking { module.onStart(host) }
     host.finished.await()
     val reason = host.stopReason
-    if (reason.startsWith("script failed")) throw UsageError(reason)
+    // The error was already printed while the module ran; only the exit code is left to report.
+    if (reason.startsWith("script failed")) throw ScriptFailed(reason)
     return ""
 }
 
@@ -75,17 +77,19 @@ private fun loadProject(target: File): Project {
     if (target.isFile) {
         val runtime = LocalModules.runtimeForFile(target.name) ?: throw UsageError("${target.name} is not a .lua, .js or .py script")
         val source = target.readText()
-        val name = target.nameWithoutExtension
-        val manifest = LocalModules.manifest(LocalModules.idFor(name) { false }, name, source, LocalModules.AVAILABLE.toSet(), null, runtime)
+        val entry = LocalModules.entryFor(runtime)
         val folder = target.absoluteFile.parentFile
         // Other scripts of the same language next to it, so that require() finds them.
         val neighbours = folder.walkTopDown().maxDepth(NEIGHBOUR_DEPTH)
             .onEnter { it == folder || !it.name.startsWith(".") && it.name != "node_modules" }
             .filter { it.isFile && it != target.absoluteFile && it.extension == target.extension && it.length() <= MAX_NEIGHBOUR_BYTES }
             .map { it.relativeTo(folder).invariantSeparatorsPath to it }
-            .filter { (path, _) -> path != manifest.entry && ModuleManifests.isRelativePath(path) }
+            .filter { (path, _) -> path != entry && ModuleManifests.isRelativePath(path) }
             .take(MAX_NEIGHBOURS)
             .associate { (path, file) -> path to file.readBytes() }
+        // The permissions come from the code, the main script and the ones it may require alike.
+        val allSources = (neighbours.values.map { it.decodeToString() } + source).joinToString("\n")
+        val manifest = scriptManifest(target, allSources)
         return Project(manifest, neighbours + (manifest.entry to source.toByteArray()), folder)
     }
     val manifestFile = File(target, ModulePackageFormat.MANIFEST)

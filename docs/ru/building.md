@@ -23,7 +23,7 @@ sdk.dir=/path/to/android-sdk
 | `gradlew build` | Всё: юнит-тесты, lint, отладочный и релизный APK |
 | `gradlew :host-app:assembleDebug` | `host-app/build/outputs/apk/debug/host-app-debug.apk` |
 | `gradlew :host-app:installDebug` | Собирает и ставит на подключённое устройство. У отладочной сборки свой идентификатор, `dev.moduforge.host.debug`, поэтому она уживается с установленным релизом и не спорит с ним из-за подписи |
-| `gradlew :sdk:test :core:test :tools:packer:test :runtime-sandbox:testDebugUnitTest` | Юнит-тесты; устройство не нужно |
+| `gradlew :sdk:test :core:test :runtime-script:test :tools:packer:test :runtime-sandbox:testDebugUnitTest` | Юнит-тесты; устройство не нужно |
 | `gradlew :host-app:connectedDebugAndroidTest` | Тесты на устройстве. **После них приложение удаляется с устройства вместе со всеми данными** |
 | `gradlew :tools:packer:installDist` | Упаковщик `mfrg` в `tools/packer/build/install/mfrg` |
 | `gradlew :sdk:publishToMavenLocal` | SDK модулей как `dev.moduforge:moduforge-sdk:1.0.0` |
@@ -36,15 +36,16 @@ sdk.dir=/path/to/android-sdk
 |---|---|---|
 | `sdk/` | Библиотека Kotlin/JVM | API, под который компилируются модули: `Module`, `ModuleContext`, разрешения, манифест, декларативный интерфейс |
 | `core/` | Библиотека Kotlin/JVM | Логика хоста без зависимости от Android: брокер разрешений, жизненный цикл модулей, интерфейсы журнала аудита, формат пакета и подписи, сетевая политика |
-| `runtime-sandbox/` | Библиотека Android | Сервис в изолированном процессе, протокол AIDL, рантайм Lua и его библиотеки, сетевой ретранслятор, зашифрованное хранилище, хранилище пакетов |
+| `runtime-script/` | Библиотека Kotlin/JVM | Рантаймы Lua, JavaScript и Python с библиотеками и вызовами устройства; общие для приложения и `mfrg run` |
+| `runtime-sandbox/` | Библиотека Android | Сервис в изолированном процессе, протокол AIDL, сетевой ретранслятор, зашифрованное хранилище, хранилище пакетов |
 | `host-app/` | Приложение Android | Интерфейс (Compose), база данных Room, связывание зависимостей (Hilt), фоновый сервис, уведомления |
 | `tools/packer/` | Приложение Kotlin/JVM | Команда `mfrg` |
 | `modules/hello/` | Проект модуля | Образец компилируемого модуля |
 | `modules/sandbox-probe/` | Проект модуля | Тестовый модуль, который пытается выбраться из песочницы |
-| `examples/` | Проекты на Lua | `lua-hello`, `telegram-echo-bot` |
+| `examples/` | Проекты со скриптами | Lua: `lua-hello`, `telegram-echo-bot`; JavaScript: `js-counter`, `js-weather`; Python: `py-site-watch` |
 | `docs/` | | Эта документация |
 
-Зависимости идут в одну сторону: `host-app → runtime-sandbox → core → sdk`.
+Зависимости идут в одну сторону: `host-app → runtime-sandbox → runtime-script → core → sdk`.
 
 ## Как выполняется модуль
 
@@ -71,7 +72,8 @@ sdk.dir=/path/to/android-sdk
 | `sdk/src/test` | Диапазоны версий, разбор и проверку манифеста, сериализацию дерева интерфейса |
 | `core/src/test` | Брокер разрешений, жизненный цикл модулей, подписи пакетов, сетевую политику |
 | `tools/packer/src/test` | Команды упаковщика и мастер проектов |
-| `runtime-sandbox/src/test` | Встроенные библиотеки Lua на хосте в памяти |
+| `runtime-script/src/test` | Рантаймы Lua, JavaScript и Python и их встроенные библиотеки на хосте в памяти |
+| `runtime-sandbox/src/test` | Протокол песочницы и сторона хоста в мосте |
 | `host-app/src/androidTest` | На устройстве: изоляцию песочницы, импорт и обновление пакетов, сеть и хранилище через хост, миграцию базы |
 
 Тесты на устройстве запускают настоящие изолированные процессы. Они проверяют, что модуль

@@ -341,6 +341,8 @@ internal class Interpreter(val host: PyHost) {
             s = s.parent
         }
         builtins[name]?.let { return it }
+        // `mf` is there without an import, as it is in Lua and JavaScript.
+        if (name == "mf") return modules[name] ?: loadTop(name)
         throw Py.error("NameError", "name '$name' is not defined")
     }
 
@@ -807,7 +809,7 @@ internal class Interpreter(val host: PyHost) {
     }
 
     private fun hint(name: String): String = when (name) {
-        "os", "subprocess", "socket", "urllib", "requests", "asyncio", "threading" ->
+        "os", "subprocess", "socket", "urllib", "asyncio", "threading" ->
             ". There is no $name in the module runtime; use the mf module (mf.http, mf.storage, mf.connect…)"
         else -> ""
     }

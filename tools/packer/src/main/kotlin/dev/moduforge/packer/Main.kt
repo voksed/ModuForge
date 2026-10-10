@@ -7,6 +7,7 @@ import dev.moduforge.core.pkg.ModulePackageWriter
 import dev.moduforge.core.pkg.PackageCheck
 import dev.moduforge.core.pkg.SigningKey
 import dev.moduforge.sdk.ManifestResult
+import dev.moduforge.sdk.ModuleManifest
 import dev.moduforge.sdk.ModuleManifests
 import java.io.File
 import java.util.zip.ZipFile
@@ -29,8 +30,12 @@ private const val USAGE = """mfrg - builds ModuForge module packages
       first; it shows the token. Over USB nothing else is needed (adb forwards the port); for
       Wi-Fi pass the phone's address. Token and address are remembered after the first push.
 
-  mfrg pack <dir> [--key <key-file>] [--out <file.mfrg>] [--dex <apk-or-dex>]
+  mfrg pack <dir|script> [--key <key-file>] [--out <file.mfrg>] [--dex <apk-or-dex>]
       Packs <dir> (moduforge.json plus every other file as module code) into a signed package.
+      A single .lua, .js or .py script packs without a project: its name, version and
+      description come from comment lines at its top (-- @name My module, -- @version 1.0.0,
+      -- @description ..., -- @author ..., -- @permission NOTIFICATIONS; `//` or `#` in JS and
+      Python), and the permissions are worked out from the code.
       Session files, .env files and VCS/cache directories are left out.
       Without --key your personal key is used and created on first use (~/.moduforge/key.json).
 
@@ -51,11 +56,16 @@ private const val USAGE = """mfrg - builds ModuForge module packages
 /** Thrown for mistakes in the invocation or the input; reported without a stack trace. */
 class UsageError(message: String) : Exception(message)
 
+/** A module script that failed. Its message was shown while it ran, so only the exit code is reported. */
+class ScriptFailed(message: String) : Exception(message)
+
 fun main(args: Array<String>) {
     try {
         run(args.toList()).takeIf { it.isNotEmpty() }?.let(::println)
     } catch (e: UsageError) {
         System.err.println("error: ${e.message}")
+        exitProcess(1)
+    } catch (e: ScriptFailed) {
         exitProcess(1)
     }
 }
@@ -190,12 +200,21 @@ internal fun projectFiles(dir: File, skippedSecrets: MutableList<String> = mutab
 
 /** @param target where the package goes instead of the file named by `--out` or derived from the manifest. */
 internal fun pack(dir: File, options: Options, target: File? = null): String {
+    // A single script packs as it is: its manifest comes from its code and the comment header on top.
+    val script = dir.takeIf { it.isFile && it.extension != ModulePackageFormat.EXTENSION }
     val manifestFile = File(dir, ModulePackageFormat.MANIFEST)
-    if (!manifestFile.isFile) throw UsageError("$manifestFile not found; create a project with 'mfrg new'")
-    val manifestJson = manifestFile.readText()
-    val manifest = when (val parsed = ModuleManifests.parse(manifestJson)) {
-        is ManifestResult.Valid -> parsed.manifest
-        is ManifestResult.Invalid -> throw UsageError("invalid manifest: ${parsed.problems.joinToString("; ")}")
+    if (script == null && !manifestFile.isFile) throw UsageError("$manifestFile not found; create a project with 'mfrg new'")
+    val manifest: ModuleManifest
+    val manifestJson: String
+    if (script != null) {
+        manifest = scriptManifest(script, script.readText())
+        manifestJson = ModuleManifests.encode(manifest)
+    } else {
+        manifestJson = manifestFile.readText()
+        manifest = when (val parsed = ModuleManifests.parse(manifestJson)) {
+            is ManifestResult.Valid -> parsed.manifest
+            is ManifestResult.Invalid -> throw UsageError("invalid manifest: ${parsed.problems.joinToString("; ")}")
+        }
     }
     val keyFile = options.optional("key")?.let(::File) ?: defaultKeyFile()
     val createdKey = !keyFile.exists() && options.optional("key") == null
@@ -211,7 +230,7 @@ internal fun pack(dir: File, options: Options, target: File? = null): String {
     val output = (target ?: File(options.optional("out") ?: "${manifest.id}-${manifest.version}.${ModulePackageFormat.EXTENSION}")).absoluteFile
 
     val skippedSecrets = mutableListOf<String>()
-    val files = projectFiles(dir, skippedSecrets, exclude = output)
+    val files = (if (script != null) mapOf(manifest.entry to script.readBytes()) else projectFiles(dir, skippedSecrets, exclude = output))
         .mapKeysTo(sortedMapOf()) { ModulePackageFormat.CODE_PREFIX + it.key }
     options.optional("dex")?.let { files += readDex(File(it)) }
 

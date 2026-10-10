@@ -23,7 +23,7 @@ The build uses Gradle 9.8 through the wrapper, Android Gradle plugin 9.4, Kotlin
 | `gradlew build` | Everything: unit tests, lint, debug and release APKs |
 | `gradlew :host-app:assembleDebug` | `host-app/build/outputs/apk/debug/host-app-debug.apk` |
 | `gradlew :host-app:installDebug` | Builds and installs on the connected device. The debug build has its own id, `dev.moduforge.host.debug`, so it lives next to an installed release without clashing over the signature |
-| `gradlew :sdk:test :core:test :tools:packer:test :runtime-sandbox:testDebugUnitTest` | Unit tests; no device needed |
+| `gradlew :sdk:test :core:test :runtime-script:test :tools:packer:test :runtime-sandbox:testDebugUnitTest` | Unit tests; no device needed |
 | `gradlew :host-app:connectedDebugAndroidTest` | Device tests. **Uninstalls the app from the device afterwards, with all its data** |
 | `gradlew :tools:packer:installDist` | The `mfrg` packer in `tools/packer/build/install/mfrg` |
 | `gradlew :sdk:publishToMavenLocal` | The module SDK as `dev.moduforge:moduforge-sdk:1.0.0` |
@@ -36,15 +36,16 @@ The release APK is unsigned; sign it with your own key before distributing.
 |---|---|---|
 | `sdk/` | Kotlin/JVM library | The API modules compile against: `Module`, `ModuleContext`, capabilities, manifest, declarative UI |
 | `core/` | Kotlin/JVM library | Host logic with no Android dependency: permission broker, module lifecycle, audit log interfaces, package format and signatures, network policy |
-| `runtime-sandbox/` | Android library | The isolated-process service, AIDL protocol, Lua runtime and its libraries, network relay, encrypted storage, package store |
+| `runtime-script/` | Kotlin/JVM library | The Lua, JavaScript and Python runtimes with their libraries and the device calls; shared by the app and `mfrg run` |
+| `runtime-sandbox/` | Android library | The isolated-process service, AIDL protocol, network relay, encrypted storage, package store |
 | `host-app/` | Android application | UI (Compose), Room database, dependency wiring (Hilt), background service, notifications |
 | `tools/packer/` | Kotlin/JVM application | The `mfrg` command |
 | `modules/hello/` | Module project | Template of a compiled module |
 | `modules/sandbox-probe/` | Module project | Test module that tries to escape the sandbox |
-| `examples/` | Lua projects | `lua-hello`, `telegram-echo-bot` |
+| `examples/` | Script projects | Lua: `lua-hello`, `telegram-echo-bot`; JavaScript: `js-counter`, `js-weather`; Python: `py-site-watch` |
 | `docs/` | | This documentation |
 
-Dependencies point one way: `host-app → runtime-sandbox → core → sdk`.
+Dependencies point one way: `host-app → runtime-sandbox → runtime-script → core → sdk`.
 
 ## How a module runs
 
@@ -70,7 +71,8 @@ Dependencies point one way: `host-app → runtime-sandbox → core → sdk`.
 | `sdk/src/test` | Version ranges, manifest parsing and validation, UI tree serialization |
 | `core/src/test` | Permission broker, module lifecycle, package signatures, network policy |
 | `tools/packer/src/test` | Packer commands and the project wizard |
-| `runtime-sandbox/src/test` | The bundled Lua libraries against an in-memory host |
+| `runtime-script/src/test` | The Lua, JavaScript and Python runtimes and their bundled libraries against an in-memory host |
+| `runtime-sandbox/src/test` | The sandbox protocol and the host side of the bridge |
 | `host-app/src/androidTest` | On a device: sandbox isolation, package import and update, network and storage through the host, database migration |
 
 The device tests start real isolated processes. They assert that a module without grants

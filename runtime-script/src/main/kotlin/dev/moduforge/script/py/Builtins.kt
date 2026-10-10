@@ -262,7 +262,8 @@ internal object Builtins {
         def("input") { a ->
             interp.host.ask(a.str(0, "prompt", "")) ?: throw Py.error("EOFError", "EOF when reading a line")
         }
-        def("open") { _ -> throw Py.error("OSError", "there is no file system in a module; use mf.storage") }
+        // Files are the module's own storage (mf.storage); the implementation is in lib/_fileio.py.
+        def("open") { a -> interp.call(interp.importModule("_fileio").attrs.getValue("open"), a.pos, a.kw) }
         def("exit") { a -> throw PyExit(a.pos.firstOrNull()) }
         g["quit"] = g["exit"]
         def("super") { a -> if (a.pos.size >= 2) PySuper(a.pos[0] as PyClass, a.pos[1]) else interp.zeroArgSuper() }

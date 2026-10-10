@@ -7,6 +7,7 @@ import org.mozilla.javascript.BaseFunction
 import org.mozilla.javascript.Context
 import org.mozilla.javascript.Function
 import org.mozilla.javascript.NativeArray
+import org.mozilla.javascript.EvaluatorException
 import org.mozilla.javascript.RhinoException
 import org.mozilla.javascript.ScriptRuntime
 import org.mozilla.javascript.Scriptable
@@ -50,13 +51,32 @@ internal class JsScriptModule(private val files: Map<String, ByteArray>, private
                 context.stopSelf("script finished")
             } catch (e: RhinoException) {
                 if (e.isInterruption()) return@thread
-                val message = "${e.details()} (${e.sourceName()}:${e.lineNumber()})"
+                val message = "${e.details()}${syntaxHint(e, source.decodeToString())} (${e.sourceName()}:${e.lineNumber()})"
                 context.log.error("script failed: $message")
                 context.stopSelf("script failed: $message")
             } finally {
                 Context.exit()
             }
         }
+    }
+
+    /**
+     * A syntax error in a script written the modern way says nothing about the cause in this engine;
+     * the line is looked at to name what is not supported and what to use instead.
+     */
+    private fun syntaxHint(e: RhinoException, source: String): String {
+        if (e !is EvaluatorException) return ""
+        val line = source.lines().getOrNull(e.lineNumber() - 1) ?: return ""
+        val hint = when {
+            Regex("""^\s*(export\s+)?class\s""").containsMatchIn(line) -> "class is not supported; use a function and its prototype"
+            Regex("""(^|\W)(async|await)(\W|$)""").containsMatchIn(line) -> "async/await is not supported; calls simply wait for their result"
+            Regex("""(^|\W)for\s*\(\s*const(\W|$)""").containsMatchIn(line) -> "write for (let x of ...): const is not accepted in for-loops here"
+            line.contains("?.") || line.contains("??") -> "?. and ?? are not supported; use && and || or an if"
+            Regex("""^\s*(import|export)(\s|{|$)""").containsMatchIn(line) -> "import/export are not supported; use require() for the module's own files"
+            Regex("""\.\.\.""").containsMatchIn(line) -> "the ... spread is not supported; use apply() or concat()"
+            else -> return ""
+        }
+        return " - $hint"
     }
 
     override suspend fun onUiEvent(context: ModuleContext, event: UiEvent) {

@@ -432,6 +432,60 @@ class PythonTest {
     }
 
     @Test
+    fun `open reads and writes the module storage`() {
+        val host = FakeHost(declared = setOf(dev.moduforge.sdk.Capability.FILE_SANDBOXED))
+        val out = py(
+            """
+            with open("notes.txt", "w") as f:
+                f.write("one\n")
+                f.write("two\n")
+            with open("notes.txt", "a") as f:
+                f.write("three\n")
+            with open("notes.txt") as f:
+                lines = [line.strip() for line in f]
+            print(lines, open("notes.txt").read().count("\n"))
+            try:
+                open("missing.txt")
+            except FileNotFoundError as e:
+                print("missing")
+            with open("data.bin", "wb") as f:
+                f.write(bytes([1, 2]))
+            print(list(open("data.bin", "rb").read()))
+            """.trimIndent(),
+            host,
+        )
+        assertEquals(listOf("['one', 'two', 'three'] 3", "missing", "[1, 2]"), out)
+    }
+
+    @Test
+    fun `requests is a thin layer over mf http`() {
+        val host = FakeHost(declared = setOf(dev.moduforge.sdk.Capability.NETWORK_OUTBOUND))
+        val out = py(
+            """
+            import requests
+            try:
+                requests.get("http://offline.example/", params={"q": "a b"})
+            except requests.exceptions.RequestException as e:
+                print("failed", isinstance(e, OSError))
+            print(hasattr(requests, "Session"), requests.Session().headers)
+            """.trimIndent(),
+            host,
+        )
+        assertEquals(listOf("failed True", "True {}"), out)
+    }
+
+    @Test
+    fun `mf is available without an import`() {
+        val out = py(
+            """
+            mf.log("hello", mf.name)
+            print(type(mf).__name__ != "", mf.time() > 0)
+            """.trimIndent(),
+        )
+        assertEquals(listOf("hello T", "True True"), out.takeLast(2))
+    }
+
+    @Test
     fun `the mf module gives access to the host`() {
         val host = FakeHost(mutableListOf("  Baku "), declared = setOf(dev.moduforge.sdk.Capability.NETWORK_OUTBOUND, dev.moduforge.sdk.Capability.FILE_SANDBOXED))
         host.files["old.txt"] = "kept".toByteArray()

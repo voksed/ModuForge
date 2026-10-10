@@ -9,7 +9,8 @@ differ. Short ready-made examples are in the [cookbook](cookbook.md).
 ## The language
 
 - JavaScript without a browser and without Node.js. Available: `let`/`const`, arrow
-  functions, template strings, destructuring, `for…of`, rest parameters, generators,
+  functions, template strings, destructuring, `for…of` (declare the variable with `let` or
+  `var`: `for (const x of …)` is a syntax error in this engine), rest parameters, generators,
   `Map`/`Set`, `Symbol`, typed arrays, `JSON`, the modern `String`, `Array` and `Object`
   methods.
 - Not available: `class` declarations (use functions and prototypes), `async`/`await`,

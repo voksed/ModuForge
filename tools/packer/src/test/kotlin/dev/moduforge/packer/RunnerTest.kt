@@ -87,7 +87,7 @@ class RunnerTest {
         assertEquals(listOf("[question] Name?", "hello Ann 42", "[notification] done"), execute(dir.path, answers = listOf("Ann")).filter { !it.startsWith("script finished") })
 
         val failing = temp.newFile("bad.py").apply { writeText("print('a')\n\nprint(1 / 0)\n") }
-        val error = assertThrows(UsageError::class.java) { execute(failing.path) }
+        val error = assertThrows(ScriptFailed::class.java) { execute(failing.path) }
         assertTrue(error.message, "ZeroDivisionError: division by zero (bad.py:3)" in error.message.orEmpty() || "main.py:3" in error.message.orEmpty())
     }
 
@@ -162,10 +162,45 @@ class RunnerTest {
     @Test
     fun `a failing script is reported as an error with its place`() {
         val dir = project("js", "main.js", "", "mf.log('start');\nboom();")
-        val error = assertThrows(UsageError::class.java) { execute(dir.path) }
+        val shown = mutableListOf<String>()
+        val error = assertThrows(ScriptFailed::class.java) {
+            run(listOf("run", dir.path), print = { shown += it })
+        }
         assertTrue(error.message, "script failed" in error.message!! && "main.js:2" in error.message!!)
+        // The error is printed once, while the module runs; the caller only sets the exit code.
+        assertEquals(1, shown.count { "script failed" in it && "main.js:2" in it })
         assertThrows(UsageError::class.java) { execute(File(temp.root, "nowhere").path) }
         assertThrows(UsageError::class.java) { execute(temp.newFile("notes.txt").path) }
+    }
+
+    @Test
+    fun `a single script gets only the permissions its code uses`() {
+        val plain = File(temp.newFolder(), "plain.py").apply { writeText("print('hi')\n") }
+        val shown = mutableListOf<String>()
+        run(listOf("run", plain.path), print = { shown += it })
+        assertTrue(shown.toString(), shown.any { it == "permissions: none" })
+
+        val fetcher = File(temp.newFolder(), "fetch.py").apply { writeText("import mf\nmf.log(mf.storage.list())\n") }
+        val second = mutableListOf<String>()
+        run(listOf("run", fetcher.path), print = { second += it })
+        assertTrue(second.toString(), second.any { it == "permissions: FILE_SANDBOXED" })
+    }
+
+    @Test
+    fun `a single script is packed from its header and its code`() {
+        val script = File(temp.newFolder(), "water.py").apply {
+            writeText(
+                listOf("# @name Water reminder", "# @version 2.1.0", "# @description Drink.", "import mf", "mf.notify('Water', 'now')", "")
+                    .joinToString(System.lineSeparator()),
+            )
+        }
+        val out = File(temp.root, "water.mfrg")
+        val key = File(temp.root, "key.json")
+        run(listOf("keygen", key.path))
+        val report = run(listOf("pack", script.path, "--key", key.path, "--out", out.path))
+        assertTrue(report, "Water reminder 2.1.0" in report && "NOTIFICATIONS" in report)
+        val check = run(listOf("verify", out.path))
+        assertTrue(check, "Water reminder" in check && "python" in check.lowercase())
     }
 
     @Test

@@ -523,4 +523,10 @@ class ScriptApiTest {
         assertTrue(stored, "\"city\":\"Baku\"" in stored && "limit" !in stored)
         assertEquals("""{"city":{"label":"City?","secret":false}}""", host.files.getValue("config.meta.json").decodeToString())
     }
+
+    @Test
+    fun `a javascript syntax error names the unsupported feature`() {
+        val result = runScript(dev.moduforge.sdk.ModuleRuntimeKind.JS, "class A {}")
+        assertTrue(result.output.toString(), result.output.any { "class is not supported" in it })
+    }
 }
