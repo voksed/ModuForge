@@ -54,6 +54,11 @@ internal class JsScriptModule(private val files: Map<String, ByteArray>, private
                 val message = "${e.details()}${syntaxHint(e, source.decodeToString())} (${e.sourceName()}:${e.lineNumber()})"
                 context.log.error("script failed: $message")
                 context.stopSelf("script failed: $message")
+            } catch (e: Exception) {
+                // Whatever else goes wrong in the engine must still end the module instead of leaving it hanging.
+                if (e is InterruptedException) return@thread
+                context.log.error("script failed: ${e.javaClass.simpleName}: ${e.message}")
+                context.stopSelf("script failed: ${e.javaClass.simpleName}")
             } finally {
                 Context.exit()
             }
@@ -71,9 +76,8 @@ internal class JsScriptModule(private val files: Map<String, ByteArray>, private
             Regex("""^\s*(export\s+)?class\s""").containsMatchIn(line) -> "class is not supported; use a function and its prototype"
             Regex("""(^|\W)(async|await)(\W|$)""").containsMatchIn(line) -> "async/await is not supported; calls simply wait for their result"
             Regex("""(^|\W)for\s*\(\s*const(\W|$)""").containsMatchIn(line) -> "write for (let x of ...): const is not accepted in for-loops here"
-            line.contains("?.") || line.contains("??") -> "?. and ?? are not supported; use && and || or an if"
-            Regex("""^\s*(import|export)(\s|{|$)""").containsMatchIn(line) -> "import/export are not supported; use require() for the module's own files"
-            Regex("""\.\.\.""").containsMatchIn(line) -> "the ... spread is not supported; use apply() or concat()"
+            Regex("""^\s*(import|export)(\s|\{|$)""").containsMatchIn(line) -> "import/export are not supported; use require() for the module's own files"
+            Regex("""\.\.\.""").containsMatchIn(line) -> "the ... spread is not supported in calls; use f.apply(null, args)"
             else -> return ""
         }
         return " - $hint"

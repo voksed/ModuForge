@@ -44,8 +44,8 @@ var resp = mf.http({ url: "https://api.github.com/zen" });
 mf.log(resp.body);
 ```
 
-Write `var` or `let` in loops (`for (let x of list)`); `class`, `async` and `?.` are not
-supported, and the error message says so.
+Write `var` or `let` in loops (`for (let x of list)`); `class`, `async` and `f(...args)` are
+not supported, and the error message says so.
 
 ## Lua
 

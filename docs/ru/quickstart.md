@@ -44,7 +44,7 @@ var resp = mf.http({ url: "https://api.github.com/zen" });
 mf.log(resp.body);
 ```
 
-В циклах пишите `var` или `let` (`for (let x of list)`); `class`, `async` и `?.` не
+В циклах пишите `var` или `let` (`for (let x of list)`); `class`, `async` и `f(...args)` не
 поддерживаются, и сообщение об ошибке об этом говорит.
 
 ## Lua

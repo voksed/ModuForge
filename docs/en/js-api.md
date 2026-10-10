@@ -9,13 +9,14 @@ differ. Short ready-made examples are in the [cookbook](cookbook.md).
 ## The language
 
 - JavaScript without a browser and without Node.js. Available: `let`/`const`, arrow
-  functions, template strings, destructuring, `for…of` (declare the variable with `let` or
+  functions, template strings, destructuring, default parameter values, `?.` and `??`, `**`,
+  the spread `...` in array and object literals, `for…of` (declare the variable with `let` or
   `var`: `for (const x of …)` is a syntax error in this engine), rest parameters, generators,
-  `Map`/`Set`, `Symbol`, typed arrays, `JSON`, the modern `String`, `Array` and `Object`
-  methods.
+  `Map`/`Set`, `Symbol`, `Promise` and `BigInt` as objects, typed arrays, `JSON`, the modern
+  `String`, `Array` and `Object` methods.
 - Not available: `class` declarations (use functions and prototypes), `async`/`await`,
-  default parameter values, the spread operator `...` in calls and array literals, `?.` and
-  `??`, `import`/`export`, `setTimeout`, `fetch`, `process`, `Buffer`, npm packages that
+  the spread operator in calls (`f(...args)`: use `f.apply(null, args)`),
+  `import`/`export`, `setTimeout`, `fetch`, `process`, `Buffer`, npm packages that
   need Node.js. Libraries written in plain ES5 work when you put their file into the module
   folder.
 - Every call is synchronous: `mf.http(...)` returns the answer, `mf.sleep(1)` pauses. A bot

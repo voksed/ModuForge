@@ -9,9 +9,9 @@
 
 - There is no browser, no Node.js, no CPython. No npm or PyPI packages. No `fetch`, `setTimeout`, `require("fs")`,
   `os`, `subprocess`, `threading`, `asyncio`, `async`/`await`.
-- JavaScript (Rhino, ES6 subset): no `class`, no `async`/`await`, no default parameter values, no `...` spread in
-  calls or arrays, no `?.` or `??`, no `import`/`export`. Use `var` or `let` in `for…of` (not `const`). Use
-  `function` and `prototype`. Use `require("mf/config")` for libraries and for your own files.
+- JavaScript (Rhino, ES6 subset): no `class`, no `async`/`await`, no `...` spread in calls (use `apply`), no
+  `import`/`export`. Default parameters, `?.`, `??`, `**`, array/object spread, arrow functions and template
+  strings work. Use `var` or `let` in `for…of` (not `const`). Use `function` and `prototype`. Use `require("mf/config")` for libraries and for your own files.
 - Python: an interpreter of a large part of Python 3 (not CPython). `mf` is available without import. `import json,
   math, time, random, re, string, hashlib, base64, sys, datetime, collections, functools, itertools` work.
   `import requests` is a thin layer over `mf.http`; `open()` works on the module's own storage. No classes
