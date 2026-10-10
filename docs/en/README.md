@@ -12,6 +12,7 @@ modules, and decides what each of them may reach.
 | You want to | Read |
 |---|---|
 | Install and run modules on your phone | [User guide](user-guide.md) |
+| Write a first module quickly | [Quickstart](quickstart.md) |
 | Write a bot or a script | [Writing modules](writing-modules.md), the [cookbook](cookbook.md), then the [Lua API](lua-api.md), the [JavaScript API](js-api.md) or the [Python API](python-api.md) |
 | Write a compiled module with its own UI | [Kotlin modules](kotlin-modules.md) |
 | Understand what a module can and cannot do | [Security model](security.md) |

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and "show your module"
+    url: https://github.com/voksed/ModuForge/discussions
+    about: Ask how to do something, or show a module you wrote.
+  - name: Security problem
+    url: https://github.com/voksed/ModuForge/blob/main/SECURITY.md
+    about: Please do not open a public issue; follow SECURITY.md.

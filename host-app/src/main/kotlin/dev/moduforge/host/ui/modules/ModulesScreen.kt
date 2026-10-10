@@ -409,6 +409,7 @@ private val ModuleTemplate.labelRes: Int
     get() = when (kind) {
         ModuleTemplates.TELEGRAM -> R.string.template_telegram
         ModuleTemplates.WATCHER -> R.string.template_watcher
+        ModuleTemplates.MONITOR -> R.string.template_monitor
         else -> R.string.template_empty
     }
 

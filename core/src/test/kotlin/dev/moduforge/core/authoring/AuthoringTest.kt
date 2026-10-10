@@ -69,7 +69,7 @@ class AuthoringTest {
 
     @Test
     fun `every template declares what its script uses and yields a valid manifest`() {
-        assertEquals(9, ModuleTemplates.ALL.map { it.key }.toSet().size)
+        assertEquals(12, ModuleTemplates.ALL.map { it.key }.toSet().size)
         ModuleTemplates.ALL.forEach { template ->
             val detected = ScriptAnalyzer.detectPermissions(template.script, template.runtime)
             assertTrue("${template.key}: $detected", template.permissions.keys.containsAll(detected))
@@ -79,7 +79,7 @@ class AuthoringTest {
             assertEquals(LocalModules.entryFor(template.runtime), manifest.entry)
         }
         LocalModules.RUNTIMES.forEach { runtime ->
-            assertEquals(setOf("telegram", "watcher", "empty"), ModuleTemplates.forRuntime(runtime).map { it.kind }.toSet())
+            assertEquals(setOf("telegram", "watcher", "monitor", "empty"), ModuleTemplates.forRuntime(runtime).map { it.kind }.toSet())
         }
     }
 

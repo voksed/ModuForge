@@ -17,6 +17,7 @@
     <string name="create_title">Start from</string>
     <string name="template_telegram">Telegram bot</string>
     <string name="template_watcher">Page watcher with notifications</string>
+    <string name="template_monitor">Site monitor: tells you when your sites go down</string>
     <string name="template_empty">Empty script</string>
     <string name="editor_title">Editor</string>
     <string name="editor_name">Module name</string>

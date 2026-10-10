@@ -29,6 +29,7 @@ class ModuleTemplate(
 object ModuleTemplates {
     const val TELEGRAM = "telegram"
     const val WATCHER = "watcher"
+    const val MONITOR = "monitor"
     const val EMPTY = "empty"
 
     private val telegramPermissions = linkedMapOf(
@@ -40,6 +41,13 @@ object ModuleTemplates {
         Capability.NETWORK_OUTBOUND to "Downloads the watched page.",
         Capability.FILE_SANDBOXED to "Remembers the address and the last seen content.",
         Capability.NOTIFICATIONS to "Tells you when the page changes.",
+        Capability.BACKGROUND_EXECUTION to "Keeps checking while the app is not on screen.",
+    )
+
+    private val monitorPermissions = linkedMapOf(
+        Capability.NETWORK_OUTBOUND to "Opens the addresses you listed, and only those.",
+        Capability.FILE_SANDBOXED to "Keeps the last state of each site to notice a change.",
+        Capability.NOTIFICATIONS to "Tells you when a site goes down or comes back.",
         Capability.BACKGROUND_EXECUTION to "Keeps checking while the app is not on screen.",
     )
 
@@ -91,6 +99,39 @@ object ModuleTemplates {
                 config.set("last", response.body)
             end)
 
+            schedule.run()
+            """.trimIndent() + "\n",
+        ),
+        ModuleTemplate(
+            "lua-monitor", MONITOR, "Site monitor: tells you when one of your sites goes down or comes back",
+            ModuleRuntimeKind.LUA, monitorPermissions,
+            """
+            -- Checks your sites every few minutes and notifies when one goes down or comes back.
+            local config = require("mf.config")
+            local schedule = require("mf.schedule")
+
+            local list = config.get("sites", { ask = "Sites to watch, separated by spaces", label = "Sites" })
+            if not list then
+                mf.log("nothing to watch")
+                return
+            end
+
+            local state = mf.json.decode(mf.storage.read("state.json") or "{}")
+
+            schedule.every(300, function()
+                for site in list:gmatch("%S+") do
+                    local url = site:find("://", 1, true) and site or ("https://" .. site)
+                    local response, err = mf.http{ url = url }
+                    local up = response ~= nil and response.status < 500
+                    local note = response and ("HTTP " .. response.status) or tostring(err)
+                    mf.log((up and "up   " or "DOWN ") .. url .. " " .. note)
+                    if state[url] ~= nil and state[url] ~= up then
+                        mf.notify(up and "Back up" or "Down", url)
+                    end
+                    state[url] = up
+                end
+                mf.storage.write("state.json", mf.json.encode(state))
+            end)
             schedule.run()
             """.trimIndent() + "\n",
         ),
@@ -153,6 +194,43 @@ object ModuleTemplates {
             """.trimIndent() + "\n",
         ),
         ModuleTemplate(
+            "js-monitor", MONITOR, "Site monitor: tells you when one of your sites goes down or comes back",
+            ModuleRuntimeKind.JS, monitorPermissions,
+            """
+            // Checks your sites every few minutes and notifies when one goes down or comes back.
+            var config = require("mf/config");
+            var schedule = require("mf/schedule");
+
+            var list = config.get("sites", { ask: "Sites to watch, separated by spaces", label: "Sites" });
+            if (!list) {
+                mf.log("nothing to watch");
+            } else {
+                var state = JSON.parse(mf.storage.read("state.json") || "{}");
+                schedule.every(300, function () {
+                    list.split(/\s+/).filter(Boolean).forEach(function (site) {
+                        var url = site.indexOf("://") >= 0 ? site : "https://" + site;
+                        var up, note;
+                        try {
+                            var response = mf.http({ url: url });
+                            up = response.status < 500;
+                            note = "HTTP " + response.status;
+                        } catch (error) {
+                            up = false;
+                            note = String(error);
+                        }
+                        mf.log((up ? "up   " : "DOWN ") + url + " " + note);
+                        if (state[url] !== undefined && state[url] !== up) {
+                            mf.notify(up ? "Back up" : "Down", url);
+                        }
+                        state[url] = up;
+                    });
+                    mf.storage.write("state.json", JSON.stringify(state));
+                });
+                schedule.run();
+            }
+            """.trimIndent() + "\n",
+        ),
+        ModuleTemplate(
             "js-empty", EMPTY, "Empty script", ModuleRuntimeKind.JS, emptyMap(),
             """
             // Runs from top to bottom when the module starts.
@@ -207,6 +285,40 @@ object ModuleTemplates {
                     if previous and previous != response.body:
                         mf.notify("Page changed", url)
                     config.set("last", response.body)
+
+                schedule.every(300, check)
+                schedule.run()
+            """.trimIndent() + "\n",
+        ),
+        ModuleTemplate(
+            "py-monitor", MONITOR, "Site monitor: tells you when one of your sites goes down or comes back",
+            ModuleRuntimeKind.PYTHON, monitorPermissions,
+            """
+            # Checks your sites every few minutes and notifies when one goes down or comes back.
+            import json
+            import mf
+            from mf import config, schedule
+
+            sites = config.get("sites", ask="Sites to watch, separated by spaces", label="Sites")
+            if not sites:
+                mf.log("nothing to watch")
+            else:
+                state = json.loads(mf.storage.read("state.json") or "{}")
+
+                def check():
+                    for site in sites.split():
+                        url = site if "://" in site else "https://" + site
+                        try:
+                            up = mf.http(url).status < 500
+                            note = "reachable"
+                        except mf.Error as error:
+                            up = False
+                            note = str(error)
+                        mf.log(("up   " if up else "DOWN ") + url + " " + note)
+                        if url in state and state[url] != up:
+                            mf.notify("Back up" if up else "Down", url)
+                        state[url] = up
+                    mf.storage.write("state.json", json.dumps(state))
 
                 schedule.every(300, check)
                 schedule.run()

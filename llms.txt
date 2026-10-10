@@ -1,0 +1,98 @@
+# ModuForge
+
+> ModuForge is an Android app that runs small modules (bots, scripts, automations) in sandboxes. A module is a
+> script in Lua, JavaScript or Python (or a compiled Kotlin class). It reaches the phone only through the `mf`
+> object and only with the permissions the user allowed. This file is a summary for AI assistants that write
+> modules. Full references: docs/en/lua-api.md, docs/en/js-api.md, docs/en/python-api.md.
+
+## Rules that differ from what you would write by default
+
+- There is no browser, no Node.js, no CPython. No npm or PyPI packages. No `fetch`, `setTimeout`, `require("fs")`,
+  `os`, `subprocess`, `threading`, `asyncio`, `async`/`await`.
+- JavaScript (Rhino, ES6 subset): no `class`, no `async`/`await`, no default parameter values, no `...` spread in
+  calls or arrays, no `?.` or `??`, no `import`/`export`. Use `var` or `let` in `for…of` (not `const`). Use
+  `function` and `prototype`. Use `require("mf/config")` for libraries and for your own files.
+- Python: an interpreter of a large part of Python 3 (not CPython). `mf` is available without import. `import json,
+  math, time, random, re, string, hashlib, base64, sys, datetime, collections, functools, itertools` work.
+  `import requests` is a thin layer over `mf.http`; `open()` works on the module's own storage. No classes
+  inheriting from built-in types, no `match`, no `eval`. Calls simply wait for the result.
+- Lua: Lua 5.x tables and strings; use `mf.json.encode/decode`, not a JSON library.
+- Failure style: Lua returns `nil, "message"`; JavaScript throws; Python raises `mf.Error` (a subclass of `OSError`).
+- Everything is permission-gated. List the permissions the code uses in `moduforge.json`; a single script
+  gets them found from its code. A call without its permission fails with "X is not granted".
+- A module is a project folder: `moduforge.json` (manifest), the entry script (`main.lua`, `main.js`, `main.py`) and
+  other files of the same language. Run it with `mfrg run <dir> --watch`, push to a phone with `mfrg push`, pack with
+  `mfrg pack`.
+
+## Manifest (`moduforge.json`)
+
+```json
+{
+  "id": "com.example.hello", "name": "Hello", "version": "1.0.0", "sdkRange": ">=1.0.0 <2.0.0",
+  "runtime": "python", "entry": "main.py",
+  "permissions": ["NETWORK_OUTBOUND", "NOTIFICATIONS"],
+  "permissionReasons": { "NETWORK_OUTBOUND": "Asks the API.", "NOTIFICATIONS": "Tells you." }
+}
+```
+
+`runtime` is `lua`, `js`, `python` or `dex`. Permissions: `NETWORK_OUTBOUND` (mf.http, connect, websocket),
+`FILE_SANDBOXED` (mf.storage, open), `NOTIFICATIONS` (mf.notify), `BACKGROUND_EXECUTION` (keep running while the
+app is closed), `LAUNCH_APPS` (mf.apps), `SCREEN_CONTROL` (mf.screen, full edition only), `CAMERA` (mf.camera).
+
+## The `mf` API (the same names in all three languages)
+
+| Call | Meaning |
+|---|---|
+| `mf.id`, `mf.name`, `mf.version` | From the manifest |
+| `mf.log(...)` | A line of output |
+| `mf.sleep(seconds)`, `mf.time()`, `mf.date(format?, time?)` | Pause, epoch seconds, strftime text |
+| `mf.http(url or {url, method, headers, body, form, redirects})` | Response: `status`, `body`/`text`, `headers`, `json()` |
+| `mf.storage.read/write/delete/list` | The module's own files (text) |
+| `mf.notify(title, text?)` | A notification |
+| `mf.ask(question, secret?)` | Asks the user; text or nil/null/None |
+| `mf.granted(p)`, `mf.request(p, reason?)` | Check or ask for a permission |
+| `mf.json.encode/decode` (Lua), `JSON` (JS), `json` (Python) | JSON |
+| `mf.hash.sha256(data)`, `mf.hmac.sha256(key, data)`, `mf.base64`, `mf.hex`, `mf.random(n)` | Hashes and encodings |
+| `mf.connect(host, port)`, `mf.websocket(url)` | Raw TCP and WebSocket |
+| `mf.ui.show(tree)`, `mf.ui.wait(timeout?)`, `mf.ui.clear()` | A simple interface: `{type="text"|"button"|"input", ...}` |
+| `mf.apps.launch(name)`, `mf.apps.list()` | Open apps |
+| `mf.screen.tap/swipe/click(text)/texts()/wait(text)` | Touch and read the screen |
+| `mf.camera.photo(path, lens?)` | A photo saved into storage |
+
+Libraries: `config` (`config.get(key, {ask, label, default})`, `config.set`), `schedule` (`schedule.every(seconds, fn)`,
+`schedule.run()` never returns), `telegram` (`telegram.bot()`, `bot:command`, `bot:on("text", fn)`, `bot:run()`).
+Load them with `require("mf.config")` (Lua), `require("mf/config")` (JS), `from mf import config` (Python).
+
+## Minimal modules
+
+Python:
+
+```python
+from mf import config, schedule
+url = config.get("url", ask="Address to watch")
+def check():
+    mf.log(url, mf.http(url).status)
+schedule.every(300, check)
+schedule.run()
+```
+
+JavaScript:
+
+```js
+var config = require("mf/config"), schedule = require("mf/schedule");
+var url = config.get("url", { ask: "Address to watch" });
+schedule.every(300, function () { mf.log(url, mf.http({ url: url }).status); });
+schedule.run();
+```
+
+Lua:
+
+```lua
+local config, schedule = require("mf.config"), require("mf.schedule")
+local url = config.get("url", { ask = "Address to watch" })
+schedule.every(300, function()
+    local r, err = mf.http{ url = url }
+    mf.log(url, r and r.status or err)
+end)
+schedule.run()
+```
