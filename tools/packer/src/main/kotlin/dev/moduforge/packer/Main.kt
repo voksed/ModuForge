@@ -18,11 +18,14 @@ private const val USAGE = """mfrg - builds ModuForge module packages
   mfrg new [dir]
       Asks a few questions and creates a ready-to-pack module project.
 
-  mfrg run <dir-or-script> [--watch] [--allow-local] [--deny <PERMISSION>[,<PERMISSION>...]]
+  mfrg run <dir-or-script> [--watch] [--mock <file.json>] [--speed <n>] [--allow-local] [--deny <PERMISSION>[,<PERMISSION>...]]
       Runs a Lua, JavaScript or Python module on this computer, with real network access and its
       storage in .mfrg-run/ next to the code. Permissions declared in the manifest count as
       granted; --deny shows how the module behaves when the user refuses one. A single script
-      needs no manifest. With --watch the module restarts whenever a file is saved. Press
+      needs no manifest. --mock answers HTTP requests and the module's questions from a JSON
+      file ({"http": [{"url": "host/path-part", "status": 200, "body": "..."}], "answers":
+      ["first answer", ...]}), so a module is tried without a network or a person. --speed 60
+      makes the module's clock run 60 times faster (mf.sleep, mf.time, schedules). With --watch the module restarts whenever a file is saved. Press
       Ctrl+C to stop.
 
   mfrg push [dir] [--watch] [--token <token>] [--host <phone address>|usb] [--no-follow]

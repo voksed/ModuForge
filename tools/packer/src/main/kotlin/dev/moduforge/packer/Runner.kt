@@ -3,6 +3,7 @@ package dev.moduforge.packer
 import dev.moduforge.core.authoring.LocalModules
 import dev.moduforge.core.net.NetworkPolicy
 import dev.moduforge.core.pkg.ModulePackageFormat
+import dev.moduforge.script.ScriptClock
 import dev.moduforge.script.ScriptRuntimes
 import dev.moduforge.sdk.Capability
 import dev.moduforge.sdk.CapabilityGateway
@@ -72,7 +73,16 @@ private fun runOnce(target: File, options: Options, readLine: () -> String?, pri
         Capability.entries.firstOrNull { it.name == name.trim() } ?: throw UsageError("unknown permission '$name'")
     }.toSet()
 
-    val host = DesktopHost(project, denied, options.switch("allow-local"), readLine, print)
+    options.optional("speed")?.let { text ->
+        val factor = text.toDoubleOrNull() ?: throw UsageError("--speed needs a number, such as 60")
+        try {
+            ScriptClock.speedUp(factor)
+        } catch (e: IllegalArgumentException) {
+            throw UsageError(e.message ?: "invalid --speed")
+        }
+    }
+    val mock = options.optional("mock")?.let { Mock.load(File(it)) }
+    val host = DesktopHost(project, denied, options.switch("allow-local"), readLine, print, mock)
     print("running ${project.manifest.name} ${project.manifest.version} (${languageName(project.manifest.runtime)}), storage in ${host.storageDir}")
     val granted = project.manifest.permissions - denied
     print("permissions: ${granted.joinToString().ifEmpty { "none" }}" + if (denied.isEmpty()) "" else "; denied: ${denied.joinToString()}")
@@ -135,6 +145,7 @@ private class DesktopHost(
     private val allowLocal: Boolean,
     private val readLine: () -> String?,
     private val print: (String) -> Unit,
+    private val mock: Mock? = null,
 ) : ModuleContext {
 
     val storageDir = File(project.root, "$RUN_DIRECTORY/storage/${project.manifest.id}")
@@ -171,6 +182,7 @@ private class DesktopHost(
     override val network = object : NetworkGateway {
         override suspend fun connect(host: String, port: Int, tls: Boolean): Connection {
             require(Capability.NETWORK_OUTBOUND)
+            mock?.let { return it.connection(host, print) }
             val address = InetAddress.getAllByName(host).firstOrNull { allowLocal || NetworkPolicy.isPublic(it) }
                 ?: throw IOException("destination is not a public internet address")
             var socket = Socket()
@@ -239,6 +251,10 @@ private class DesktopHost(
     override val prompt = object : UserPrompt {
         override suspend fun ask(question: String, secret: Boolean): String? {
             print("[question] $question")
+            mock?.nextAnswer()?.let {
+                print("[answer] " + if (secret) "(hidden)" else it)
+                return it
+            }
             val console = System.console()
             return if (secret && console != null) console.readPassword()?.concatToString() else readLine()
         }

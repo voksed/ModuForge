@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":runtime-script"))
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
 
     testImplementation(libs.junit)
 }

@@ -1,5 +1,6 @@
 package dev.moduforge.script.py
 
+import dev.moduforge.script.ScriptClock
 import java.math.BigInteger
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -316,7 +317,7 @@ internal object Stdlib {
 
     private fun time(interp: Interpreter): PyModule {
         fun fields(t: Any?, utc: Boolean): ZonedDateTime {
-            val seconds = if (t == null || t === PyNone) System.currentTimeMillis() / 1000.0 else Py.toDouble(t)
+            val seconds = if (t == null || t === PyNone) ScriptClock.nowSeconds() else Py.toDouble(t)
             return Instant.ofEpochMilli((seconds * 1000).toLong()).atZone(if (utc) ZoneOffset.UTC else ZoneId.systemDefault())
         }
         fun struct(z: ZonedDateTime) = PyTuple(
@@ -328,13 +329,13 @@ internal object Stdlib {
         }
         return module(
             "time",
-            fn("time") { _ -> System.currentTimeMillis() / 1000.0 },
+            fn("time") { _ -> ScriptClock.nowSeconds() },
             fn("time_ns") { _ -> System.currentTimeMillis() * 1_000_000L },
             fn("monotonic") { _ -> System.nanoTime() / 1e9 },
             fn("perf_counter") { _ -> System.nanoTime() / 1e9 },
             fn("sleep") { a ->
                 try {
-                    Thread.sleep((Py.toDouble(a.req(0, "secs")) * 1000).toLong().coerceAtLeast(0))
+                    Thread.sleep(ScriptClock.realMillis(Py.toDouble(a.req(0, "secs"))))
                 } catch (e: InterruptedException) {
                     Thread.currentThread().interrupt()
                     throw PyInterrupted()

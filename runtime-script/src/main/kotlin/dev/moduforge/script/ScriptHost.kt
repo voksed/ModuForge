@@ -69,9 +69,9 @@ internal class ScriptHost(val context: ModuleContext, private val locale: Locale
 
     fun log(text: String) = context.log.info(text)
 
-    fun time(): Double = System.currentTimeMillis() / 1000.0
+    fun time(): Double = ScriptClock.nowSeconds()
 
-    fun sleep(seconds: Double) = Thread.sleep((seconds * 1000).toLong().coerceAtLeast(0))
+    fun sleep(seconds: Double) = Thread.sleep(ScriptClock.realMillis(seconds))
 
     /**
      * Formats a moment with `strftime`-style directives (`%Y %m %d %H %M %S %y %j %a %A %b %B
@@ -307,7 +307,7 @@ internal class ScriptHost(val context: ModuleContext, private val locale: Locale
         val event = if (timeoutSeconds == null) {
             uiEvents.take()
         } else {
-            uiEvents.poll((timeoutSeconds * 1000).toLong().coerceAtLeast(0), TimeUnit.MILLISECONDS)
+            uiEvents.poll(ScriptClock.realMillis(timeoutSeconds), TimeUnit.MILLISECONDS)
         } ?: return null
         return when (event) {
             is UiEvent.Click -> mapOf("type" to "click", "id" to event.id)

@@ -204,6 +204,34 @@ class RunnerTest {
     }
 
     @Test
+    fun `a module is tried against prepared answers and a faster clock`() {
+        val dir = temp.newFolder()
+        val script = File(dir, "check.py")
+        script.writeText(
+            listOf(
+                "name = input('Name?')",
+                "r = mf.http('http://api.test/items?x=1')",
+                "mf.log(name, r.status, r.json()['n'])",
+                "started = mf.time()",
+                "mf.sleep(3600)",
+                "mf.log('slept', round(mf.time() - started) >= 3600)",
+                "mf.log(mf.http('http://other.test/').status)",
+            ).joinToString(System.lineSeparator()),
+        )
+        val mock = File(dir, "mock.json")
+        mock.writeText(
+            """{"http": [{"url": "api.test/items", "status": 200, "body": "{\"n\": 3}"}], "answers": ["Baku"]}""",
+        )
+        val shown = mutableListOf<String>()
+        val begun = System.currentTimeMillis()
+        run(listOf("run", script.path, "--mock", mock.path, "--speed", "10000"), print = { shown += it })
+        assertTrue("an hour of script time took ${System.currentTimeMillis() - begun} ms", System.currentTimeMillis() - begun < 20_000)
+        assertTrue(shown.toString(), "Baku 200 3" in shown && "slept True" in shown)
+        assertTrue(shown.toString(), shown.any { it.startsWith("[mock] GET other.test/ -> ") || "no answer prepared for GET other.test/" in it })
+        assertTrue(shown.toString(), "404" in shown)
+    }
+
+    @Test
     fun `network requests are real and limited to public addresses unless local ones are allowed`() {
         val server = ServerSocket(0, 1, InetAddress.getLoopbackAddress())
         thread(isDaemon = true) {
