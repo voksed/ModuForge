@@ -123,7 +123,7 @@ private fun loadProject(target: File): Project {
             .take(MAX_NEIGHBOURS)
             .associate { (path, file) -> path to file.readBytes() }
         // The permissions come from the code, the main script and the ones it may require alike.
-        val allSources = (neighbours.values.map { it.decodeToString() } + source).joinToString("\n")
+        val allSources = reachableSources(source, neighbours, runtime).joinToString("\n")
         val manifest = scriptManifest(target, allSources)
         return Project(manifest, neighbours + (manifest.entry to source.toByteArray()), folder)
     }

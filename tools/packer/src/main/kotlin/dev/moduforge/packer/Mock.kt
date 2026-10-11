@@ -28,9 +28,13 @@ import java.io.OutputStream
  * ```
  *
  * A request is answered by the first entry whose `url` is contained in `host + path` (and whose `method`,
- * when given, matches); a request nothing matches gets 404 and is printed, so a missing entry is easy to see.
+ * when given, matches). When several entries match the same request they are given out one per request, in
+ * the order of the file, and the last one repeats: this is how "first one item, then two" is written.
+ * A request nothing matches gets 404 and is printed, so a missing entry is easy to see.
  */
 internal class Mock private constructor(private val routes: List<Route>, private val answers: MutableList<String>) {
+
+    private val served = HashMap<Route, Int>()
 
     private class Route(val url: String, val method: String?, val status: Int, val headers: Map<String, String>, val body: String)
 
@@ -90,7 +94,15 @@ internal class Mock private constructor(private val routes: List<Route>, private
     }
 
     private fun answer(method: String, target: String, print: (String) -> Unit): ByteArray {
-        val route = routes.firstOrNull { it.url in target && (it.method == null || it.method.equals(method, ignoreCase = true)) }
+        val matching = routes.filter { it.url in target && (it.method == null || it.method.equals(method, ignoreCase = true)) }
+        // Several entries for one address are given out in turn and the last one repeats: "first one gift, then two".
+        val route = matching.firstOrNull()?.let { first ->
+            synchronized(served) {
+                val turn = served.getOrDefault(first, 0)
+                served[first] = turn + 1
+                matching[minOf(turn, matching.size - 1)]
+            }
+        }
         if (route == null) {
             print("[mock] no answer prepared for $method $target")
             return response(404, emptyMap(), "no mock for $method $target")

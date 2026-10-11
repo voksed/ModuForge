@@ -351,11 +351,19 @@ object ScriptAnalyzer {
         Regex("""\bmf\s*\.\s*(apps|screen)\b""") to Capability.BACKGROUND_EXECUTION,
     )
     private val UI = Regex("""\bmf\s*\.\s*ui\b""")
+    private val PY_REQUESTS = Regex("""^\s*(import\s+requests\b|from\s+requests\b)""", RegexOption.MULTILINE)
+    private val PY_OPEN = Regex("""(?<![\w.])open\s*\(""")
 
     /** Permissions whose host services the [source] calls. Line comments are ignored. */
     fun detectPermissions(source: String, runtime: ModuleRuntimeKind = ModuleRuntimeKind.LUA): Set<Capability> {
         val code = code(source, runtime)
-        return USES.filter { (pattern, _) -> pattern.containsMatchIn(code) }.map { it.second }.toSet()
+        val found = USES.filter { (pattern, _) -> pattern.containsMatchIn(code) }.map { it.second }.toMutableSet()
+        if (runtime == ModuleRuntimeKind.PYTHON) {
+            // requests runs over mf.http, open() over mf.storage.
+            if (PY_REQUESTS.containsMatchIn(code)) found += Capability.NETWORK_OUTBOUND
+            if (PY_OPEN.containsMatchIn(code)) found += Capability.FILE_SANDBOXED
+        }
+        return found
     }
 
     /** True when the script shows an interface. */

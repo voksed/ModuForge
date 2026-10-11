@@ -23,7 +23,12 @@ New-Item -ItemType Directory -Force $dist | Out-Null
 # Portable archive: the folder named mfrg with bin/ and lib/.
 $portable = Join-Path $dist 'mfrg.zip'
 if (Test-Path $portable) { Remove-Item $portable }
-Compress-Archive -Path $install -DestinationPath $portable
+# Archived from a copy: the files of the install directory can be held open by a running mfrg or Gradle.
+$copy = Join-Path $env:TEMP ('mfrg-portable-' + [guid]::NewGuid())
+New-Item -ItemType Directory $copy | Out-Null
+Copy-Item -Recurse $install (Join-Path $copy 'mfrg')
+Compress-Archive -Path (Join-Path $copy 'mfrg') -DestinationPath $portable
+Remove-Item -Recurse -Force $copy
 
 # Windows archive with its own runtime.
 $stage = Join-Path $env:TEMP ('mfrg-stage-' + [guid]::NewGuid())
@@ -33,13 +38,16 @@ $modules = 'java.base,java.logging,java.net.http,java.xml,java.naming,java.sql,j
 & $jlink --add-modules $modules --strip-debug --no-header-files --no-man-pages --compress=2 --output (Join-Path $target 'runtime')
 if ($LASTEXITCODE -ne 0) { throw 'jlink failed' }
 
-# The start script of Gradle honours JAVA_HOME, so the launcher points it at the bundled runtime.
-$launcher = @'
-@echo off
-set "JAVA_HOME=%~dp0..\runtime"
-call "%~dp0mfrg.bat" %*
-'@
-Set-Content -Path (Join-Path $target 'bin\mfrg.cmd') -Value $launcher -Encoding ascii
+# The start script of Gradle (bin\mfrg.bat) is what Windows runs for the command "mfrg"; it honours
+# JAVA_HOME, so the line below, placed after its setlocal, points it at the bundled runtime. There must be no
+# second launcher with another extension: the .bat would win over it.
+$bat = Join-Path $target 'bin\mfrg.bat'
+$lines = [System.Collections.Generic.List[string]](Get-Content -Path $bat)
+$at = $lines.FindIndex({ param($l) $l -match '^setlocal' })
+if ($at -lt 0) { throw 'setlocal not found in mfrg.bat' }
+$lines.Insert($at + 1, 'set "JAVA_HOME=%~dp0..\runtime"')
+Set-Content -Path $bat -Value $lines -Encoding ascii
+Get-ChildItem -Path (Join-Path $target 'bin') -Filter 'mfrg.cmd' -ErrorAction SilentlyContinue | Remove-Item
 
 $windows = Join-Path $dist 'mfrg-windows.zip'
 if (Test-Path $windows) { Remove-Item $windows }

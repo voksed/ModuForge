@@ -232,6 +232,62 @@ class RunnerTest {
     }
 
     @Test
+    fun `permissions of a single script come only from the files it reaches`() {
+        val dir = temp.newFolder()
+        val nl = System.lineSeparator()
+        File(dir, "main.py").writeText("import helper" + nl + "mf.log('x')" + nl)
+        File(dir, "helper.py").writeText("import deep" + nl)
+        File(dir, "deep.py").writeText("mf.notify('a', 'b')" + nl)
+        File(dir, "stranger.py").writeText("mf.http('http://x.test/')" + nl)
+        val shown = mutableListOf<String>()
+        run(listOf("run", File(dir, "main.py").path), print = { shown += it })
+        assertTrue(shown.toString(), "permissions: NOTIFICATIONS" in shown)
+    }
+
+    @Test
+    fun `requests and open are found by the permission detection`() {
+        val nl = System.lineSeparator()
+        val net = File(temp.newFolder(), "n.py").apply { writeText("import requests" + nl) }
+        val files = File(temp.newFolder(), "f.py").apply { writeText("open('a.txt', 'w').close()" + nl) }
+        val shown = mutableListOf<String>()
+        run(listOf("run", net.path), print = { shown += it })
+        assertTrue(shown.toString(), "permissions: NETWORK_OUTBOUND" in shown)
+        val second = mutableListOf<String>()
+        run(listOf("run", files.path), print = { second += it })
+        assertTrue(second.toString(), "permissions: FILE_SANDBOXED" in second)
+    }
+
+    @Test
+    fun `mock answers for one address come in turn and the last repeats`() {
+        val dir = temp.newFolder()
+        val nl = System.lineSeparator()
+        val script = File(dir, "gifts.py")
+        script.writeText("for i in range(3):" + nl + "    mf.log('n=' + str(mf.http('http://gifts.test/list').json()['n']))" + nl)
+        val mock = File(dir, "mock.json")
+        mock.writeText(
+            """{"http": [{"url": "gifts.test", "body": "{\"n\": 1}"}, {"url": "gifts.test", "body": "{\"n\": 2}"}]}""",
+        )
+        val shown = mutableListOf<String>()
+        run(listOf("run", script.path, "--mock", mock.path), print = { shown += it })
+        assertEquals(listOf("n=1", "n=2", "n=2"), shown.filter { it.startsWith("n=") })
+    }
+
+    @Test
+    fun `a packed script gets an id of its own author`() {
+        val script = File(temp.newFolder(), "zen.py").apply { writeText("mf.log('zen')" + System.lineSeparator()) }
+        val keyA = File(temp.root, "a.json").also { run(listOf("keygen", it.path)) }
+        val keyB = File(temp.root, "b.json").also { run(listOf("keygen", it.path)) }
+        val outA = File(temp.root, "a.mfrg")
+        val outB = File(temp.root, "b.mfrg")
+        run(listOf("pack", script.path, "--key", keyA.path, "--out", outA.path))
+        run(listOf("pack", script.path, "--key", keyB.path, "--out", outB.path))
+        val idPattern = Regex("script\\.zen\\.k[0-9a-f]{8}")
+        val idA = idPattern.find(run(listOf("verify", outA.path)))?.value
+        val idB = idPattern.find(run(listOf("verify", outB.path)))?.value
+        assertTrue("$idA $idB", idA != null && idB != null && idA != idB)
+    }
+
+    @Test
     fun `network requests are real and limited to public addresses unless local ones are allowed`() {
         val server = ServerSocket(0, 1, InetAddress.getLoopbackAddress())
         thread(isDaemon = true) {

@@ -215,18 +215,6 @@ internal fun pack(dir: File, options: Options, target: File? = null): String {
     val script = dir.takeIf { it.isFile && it.extension != ModulePackageFormat.EXTENSION }
     val manifestFile = File(dir, ModulePackageFormat.MANIFEST)
     if (script == null && !manifestFile.isFile) throw UsageError("$manifestFile not found; create a project with 'mfrg new'")
-    val manifest: ModuleManifest
-    val manifestJson: String
-    if (script != null) {
-        manifest = scriptManifest(script, script.readText())
-        manifestJson = ModuleManifests.encode(manifest)
-    } else {
-        manifestJson = manifestFile.readText()
-        manifest = when (val parsed = ModuleManifests.parse(manifestJson)) {
-            is ManifestResult.Valid -> parsed.manifest
-            is ManifestResult.Invalid -> throw UsageError("invalid manifest: ${parsed.problems.joinToString("; ")}")
-        }
-    }
     val keyFile = options.optional("key")?.let(::File) ?: defaultKeyFile()
     val createdKey = !keyFile.exists() && options.optional("key") == null
     if (createdKey) {
@@ -237,6 +225,18 @@ internal fun pack(dir: File, options: Options, target: File? = null): String {
         SigningKey.decode(keyFile.readText())
     } catch (e: Exception) {
         throw UsageError("cannot read signing key $keyFile: ${e.message}")
+    }
+    val manifest: ModuleManifest
+    val manifestJson: String
+    if (script != null) {
+        manifest = scriptManifest(script, script.readText(), key.fingerprint)
+        manifestJson = ModuleManifests.encode(manifest)
+    } else {
+        manifestJson = manifestFile.readText()
+        manifest = when (val parsed = ModuleManifests.parse(manifestJson)) {
+            is ManifestResult.Valid -> parsed.manifest
+            is ManifestResult.Invalid -> throw UsageError("invalid manifest: ${parsed.problems.joinToString("; ")}")
+        }
     }
     val output = (target ?: File(options.optional("out") ?: "${manifest.id}-${manifest.version}.${ModulePackageFormat.EXTENSION}")).absoluteFile
 

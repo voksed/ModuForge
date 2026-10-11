@@ -84,7 +84,8 @@ mf.log(resp and resp.body or err)
   ```
 
   `mfrg pack zen.py` writes a signed `.mfrg` file. Anyone with ModuForge opens it, sees the
-  permissions and the code, and installs it.
+  permissions and the code, and installs it. Without `# @id com.you.zen` the id is made of the
+  name and a part of your key (`script.zen.k1a2b3c4d`), so scripts of two authors never clash.
 - A project folder: `mfrg pack hello`.
 
 ## Where next
