@@ -343,6 +343,8 @@ internal class Interpreter(val host: PyHost) {
         builtins[name]?.let { return it }
         // `mf` is there without an import, as it is in Lua and JavaScript.
         if (name == "mf") return modules[name] ?: loadTop(name)
+        // bytearray is written in Python (lib/_bytearray.py).
+        if (name == "bytearray") return importModule("_bytearray").attrs["bytearray"]
         throw Py.error("NameError", "name '$name' is not defined")
     }
 

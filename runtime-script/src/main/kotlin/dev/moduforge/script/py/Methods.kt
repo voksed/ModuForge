@@ -342,6 +342,30 @@ internal object Methods {
             }
         },
         "hex" to { _ -> b.data.joinToString("") { "%02x".format(it) } },
+        "join" to { a ->
+            val out = java.io.ByteArrayOutputStream()
+            var first = true
+            for (item in Py.iterate(a.req(0, "iterable"))) {
+                if (!first) out.write(b.data)
+                first = false
+                out.write((item as? PyBytes)?.data ?: throw Py.error("TypeError", "sequence item: expected a bytes-like object, ${Py.typeName(item)} found"))
+            }
+            PyBytes(out.toByteArray())
+        },
+        "find" to { a ->
+            val needle = (a.req(0, "sub") as? PyBytes)?.data ?: throw Py.error("TypeError", "argument should be a bytes-like object")
+            val from = a.long(1, "start", 0).toInt().coerceAtLeast(0)
+            var found = -1L
+            var i = from
+            while (found < 0 && i + needle.size <= b.data.size) {
+                var same = true
+                for (j in needle.indices) if (b.data[i + j] != needle[j]) { same = false; break }
+                if (same) found = i.toLong()
+                i++
+            }
+            found
+        },
+        "endswith" to { a -> (a.req(0, "suffix") as? PyBytes)?.let { p -> b.data.size >= p.data.size && b.data.copyOfRange(b.data.size - p.data.size, b.data.size).contentEquals(p.data) } ?: false },
         "startswith" to { a -> (a.req(0, "prefix") as? PyBytes)?.let { p -> b.data.size >= p.data.size && b.data.copyOf(p.data.size).contentEquals(p.data) } ?: false },
     )
 

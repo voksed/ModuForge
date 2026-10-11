@@ -341,7 +341,7 @@ class PythonTest {
         assertTrue(syntax.lines.toString(), syntax.lines[0].startsWith("ERROR script failed: SyntaxError"))
         val missing = runScript(ModuleRuntimeKind.PYTHON, "import nothing_here")
         assertTrue(missing.lines.toString(), "ModuleNotFoundError: No module named 'nothing_here'" in missing.lines[0])
-        val os = runScript(ModuleRuntimeKind.PYTHON, "import os")
+        val os = runScript(ModuleRuntimeKind.PYTHON, "import subprocess")
         assertTrue(os.lines.toString(), "use the mf module" in os.lines[0])
     }
 
@@ -472,6 +472,50 @@ class PythonTest {
             host,
         )
         assertEquals(listOf("failed True", "True {}"), out)
+    }
+
+    @Test
+    fun `binary building blocks for protocol clients`() {
+        val out = py(
+            """
+            import struct, zlib, gzip, hmac, hashlib, binascii, secrets, os, io, crypto
+            print(struct.pack("<iQ", -2, 7).hex(), struct.unpack("<iQ", struct.pack("<iQ", -2, 7)), struct.calcsize(">HBq"))
+            print(struct.unpack(">I", b"\x00\x00\x01\x00")[0], struct.pack("<4s", b"ab").hex())
+            data = b"hello hello hello hello"
+            print(zlib.decompress(zlib.compress(data)) == data, gzip.decompress(gzip.compress(data)) == data, zlib.crc32(b"abc"))
+            print(hmac.new(b"key", b"The quick brown fox jumps over the lazy dog", hashlib.sha256).hexdigest())
+            print(hashlib.pbkdf2_hmac("sha1", b"password", b"salt", 1, 20).hex())
+            key = bytes.fromhex("000102030405060708090a0b0c0d0e0f")
+            print(crypto.aes_ecb_encrypt(bytes.fromhex("00112233445566778899aabbccddeeff"), key).hex())
+            plain = bytes(range(64))
+            iv = bytes(range(32))
+            enc = crypto.aes_ige_encrypt(plain, key, iv)
+            first = bytes(a ^ b for a, b in zip(crypto.aes_ecb_encrypt(bytes(a ^ b for a, b in zip(plain[:16], iv[:16])), key), iv[16:]))
+            print(enc[:16] == first, crypto.aes_ige_decrypt(enc, key, iv) == plain)
+            ctr = crypto.aes_ctr(key, bytes(16))
+            print(len(ctr.update(b"abc")) + len(ctr.update(b"de")), len(secrets.token_bytes(5)), len(os.urandom(3)))
+            print(int.from_bytes(b"\x01\x00", "big"), int.from_bytes(b"\xff\xff", "little", signed=True), b"-".join([b"a", b"b"]))
+            b = bytearray(b"ab")
+            b.append(99)
+            b += b"d"
+            print(bytes(b), len(b), io.BytesIO(b"xyz").read(2))
+            """.trimIndent(),
+        )
+        assertEquals(
+            listOf(
+                "feffffff0700000000000000 (-2, 7) 11",
+                "256 61620000",
+                "True True 891568578",
+                "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8",
+                "0c60c80f961f0e71f3a9b524af6012062fe037a6",
+                "69c4e0d86a7b0430d8cdb78070b4c55a",
+                "True True",
+                "5 5 3",
+                "256 -1 b'a-b'",
+                "b'abcd' 4 b'xy'",
+            ),
+            out,
+        )
     }
 
     @Test

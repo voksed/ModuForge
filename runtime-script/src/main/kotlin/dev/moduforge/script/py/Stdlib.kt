@@ -29,7 +29,7 @@ internal object Stdlib {
             "urllib" -> PyModule("urllib")
             "urllib.parse" -> urlParse()
             "_native" -> PyModule("_native", linkedMapOf("defaultdict" to PyBuiltin("defaultdict") { a, _ -> PyDict(factory = a.firstOrNull()?.takeIf { it !== PyNone }) }))
-            else -> null
+            else -> CryptoLib.create(name)
         }
         if (native != null) return native
         // The rest is written in Python and ships with the runtime.
@@ -452,6 +452,7 @@ internal object Stdlib {
         return module(
             "hashlib",
             algorithm("md5", "MD5"), algorithm("sha1", "SHA-1"), algorithm("sha256", "SHA-256"), algorithm("sha512", "SHA-512"),
+            fn("pbkdf2_hmac") { a -> CryptoLib.pbkdf2(a) },
         )
     }
 

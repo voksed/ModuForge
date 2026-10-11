@@ -455,6 +455,24 @@ internal object Builtins {
             }
         }
         if (cls === STR && name == "maketrans") return Missing
+        if (cls === INT && name == "from_bytes") {
+            return PyBuiltin("from_bytes") { a, k ->
+                val raw = (a.getOrNull(0) as? PyBytes)?.data ?: Py.toList(a[0]).map { Py.toInt(it).toByte() }.toByteArray()
+                val little = (a.getOrNull(1) ?: k["byteorder"] ?: "big") == "little"
+                val signed = Py.truth(k["signed"] ?: false)
+                val ordered = if (little) raw.reversedArray() else raw
+                if (ordered.isEmpty()) 0L else Py.norm(if (signed) java.math.BigInteger(ordered) else java.math.BigInteger(1, ordered))
+            }
+        }
+        if (cls === BYTES && name == "fromhex") {
+            return PyBuiltin("fromhex") { a, _ ->
+                val text = Py.str(a[0]).filter { !it.isWhitespace() }
+                if (text.length % 2 != 0) throw Py.error("ValueError", "non-hexadecimal number found in fromhex() arg")
+                PyBytes(ByteArray(text.length / 2) { i ->
+                    text.substring(i * 2, i * 2 + 2).toIntOrNull(16)?.toByte() ?: throw Py.error("ValueError", "non-hexadecimal number found in fromhex() arg")
+                })
+            }
+        }
         return PyBuiltin(name) { a, k ->
             if (a.isEmpty()) throw Py.error("TypeError", "descriptor '$name' needs an argument")
             val bound = method(a[0], name)
