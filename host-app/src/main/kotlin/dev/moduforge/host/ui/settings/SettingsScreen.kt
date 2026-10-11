@@ -77,6 +77,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
+        LanguageSection()
+        HorizontalDivider()
         AppearanceSection(appearance, viewModel::update, viewModel::reset)
         HorizontalDivider()
         val updateState by viewModel.updates.state.collectAsStateWithLifecycle()

@@ -36,6 +36,11 @@ class HostApplication : Application() {
         fun developerMode(): DeveloperMode
     }
 
+    override fun attachBaseContext(base: android.content.Context) {
+        // Notifications and services speak the language chosen in the settings too.
+        super.attachBaseContext(dev.moduforge.host.appearance.AppLanguage.wrap(base))
+    }
+
     /** Recovery and automatic module start, running since process start; null in sandbox processes. */
     var startup: Job? = null
         private set

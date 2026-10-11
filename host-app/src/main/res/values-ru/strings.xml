@@ -177,6 +177,8 @@
     <string name="device_screen_on">Управление экраном включено.</string>
     <string name="device_screen_off">Управление экраном выключено: модули не могут касаться экрана и читать его.</string>
     <string name="device_screen_absent">В этой сборке нет управления экраном, поэтому она ставится на любой телефон. Для модулей, которые касаются экрана, поставьте полную сборку (файл со словом full в названии) из релизов.</string>
+    <string name="language_title">Язык</string>
+    <string name="language_system">Как в системе</string>
     <string name="device_screen_open">Открыть настройки специальных возможностей</string>
     <string name="device_screen_restricted">Если Android не даёт включить, потому что приложение ограничено: откройте «О приложении» ModuForge, нажмите ⋮ и выберите «Разрешить ограниченные настройки».</string>
     <string name="device_camera_on">Доступ к камере разрешён.</string>

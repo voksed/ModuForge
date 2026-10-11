@@ -39,6 +39,10 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var updates: UpdateManager
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(dev.moduforge.host.appearance.AppLanguage.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)

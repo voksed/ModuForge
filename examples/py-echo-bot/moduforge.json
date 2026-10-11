@@ -1,0 +1,16 @@
+{
+  "id": "dev.moduforge.examples.pyechobot",
+  "name": "Echo bot",
+  "version": "1.0.0",
+  "sdkRange": ">=1.0.0 <2.0.0",
+  "runtime": "python",
+  "entry": "main.py",
+  "author": "ModuForge",
+  "description": "A Telegram bot that repeats what you write to it. Asks for the bot token once; /start, /help and /count are commands, everything else is echoed back.",
+  "permissions": ["NETWORK_OUTBOUND", "FILE_SANDBOXED", "BACKGROUND_EXECUTION"],
+  "permissionReasons": {
+    "NETWORK_OUTBOUND": "Talks to api.telegram.org.",
+    "FILE_SANDBOXED": "Keeps the bot token and the message counter.",
+    "BACKGROUND_EXECUTION": "Keeps answering while the app is not on screen."
+  }
+}
