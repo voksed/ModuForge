@@ -10,7 +10,12 @@ in its own sandbox. A module can do only what you allowed, and everything it doe
 network is written to a log you can read. The app does nothing on its own: every feature
 is a module.
 
-Version 1.0.0. Android 8.0 or newer.
+Version 1.0.0. Android 8.0 or newer. Download the APK from the
+[releases](https://github.com/voksed/ModuForge/releases/latest): `ModuForge-1.0.0.apk` is the
+standard edition and installs on any phone; `ModuForge-1.0.0-full.apk` adds screen control
+(`mf.screen`) through an accessibility service, which Google Play Protect may refuse to install
+from a browser or file manager ("blocked to protect the device") — use the standard one, or
+`adb install` the full one.
 
 ```lua
 -- A complete Telegram bot. The token is asked for on the first start.
@@ -40,9 +45,13 @@ bot:run()
 - **Write a module on the phone.** Create module → pick a starting point → edit → run.
   An editor with highlighting, snippets and several files; no computer, manifest or
   signature; permissions are worked out from the code.
-- **For authors.** `mfrg run` executes a module on your computer, `mfrg push` sends it to
-  the phone with one command and prints its output, `mfrg pack` and `mfrg link` publish
-  it. Compiled Kotlin modules are supported too.
+- **For authors.** `mfrg run` executes a module on your computer (`--watch` restarts it on
+  every save, `--mock` answers its network calls and questions from a file, `--speed` runs its
+  clock faster), `mfrg push` sends it to the phone and prints its output, `mfrg pack` and
+  `mfrg link` publish it; a single script packs without a project. `mfrg new` also writes
+  type declarations so an editor completes `mf`. Compiled Kotlin modules are supported too.
+- **Update from the app.** Settings → Update checks the releases of this repository, verifies
+  the package name and the signing key, and installs the newer APK of your edition.
 - **Install by link.** A link (or QR code) carries the author's key, so the app verifies
   the author instead of the user comparing fingerprints.
 - **Themes.** Light, dark, wallpaper or custom colours, palettes, corner shapes, text size.
@@ -55,9 +64,14 @@ Not there yet: a module catalogue, a Google Play release
 | You want to | Go to |
 |---|---|
 | Use the app | [User guide](docs/en/user-guide.md) |
+| Write a first module in five minutes | [Quickstart](docs/en/quickstart.md) |
 | Write a module | [Writing modules](docs/en/writing-modules.md), [cookbook](docs/en/cookbook.md), [Lua API](docs/en/lua-api.md), [JavaScript API](docs/en/js-api.md), [Python API](docs/en/python-api.md) |
 | Build from source | [Building](docs/en/building.md) |
 | Know what a module can do | [Security model](docs/en/security.md) |
+
+`mfrg` itself: `mfrg-windows.zip` from the releases has its own Java (unzip, put `bin` on the
+`PATH`), `mfrg.zip` needs Java 17; `tools/install.ps1` and `tools/install.sh` do it for you.
+For AI assistants that write modules there is [llms.txt](llms.txt).
 
 ```sh
 ./gradlew :host-app:assembleDebug        # the app
@@ -142,15 +156,18 @@ it runs on its own thread from start until the module is stopped.
 ```sh
 ./gradlew :tools:packer:installDist          # builds tools/packer/build/install/mfrg
 # mfrg.cmd in the project root runs it; Java 17+ must be installed
+# (or take mfrg-windows.zip / mfrg.zip from the releases)
 mfrg new                                     # asks a few questions, creates a project
-mfrg run my-bot                              # runs on this computer, real network
-mfrg push my-bot                             # installs on the phone and restarts the module
+mfrg run my-bot --watch                      # runs on this computer, restarts on every save
+mfrg run my-bot --mock mock.json --speed 60  # prepared answers, a clock 60 times faster
+mfrg push my-bot --watch                     # installs on the phone, pushes again on every save
 mfrg pack my-bot                             # -> <id>-<version>.mfrg
+mfrg pack zen.py                             # one script, manifest from its "# @name" header
 mfrg verify my-bot-1.0.0.mfrg
 mfrg link my-bot-1.0.0.mfrg https://...      # install link carrying your key's fingerprint
 ```
 
-`mfrg new` offers starting points (Telegram bot, page watcher, empty script). `pack` signs
+`mfrg new` offers starting points (Telegram bot, page watcher, site monitor, empty script). `pack` signs
 with your personal key, created on first use at `~/.moduforge/key.json`; `--key` names
 another one.
 
@@ -192,10 +209,12 @@ yet on one screen, so scripts do not have to request them.
 
 Network and storage calls return `nil, message` on failure, including a missing grant.
 `require` loads other files of the package. `io` and `luajava` are not available; of `os`
-only `time`, `date` and `clock`. In JavaScript failures are thrown as `Error`.
-`examples/lua-hello` is a complete script module. `examples/telegram-echo-bot` is a working
-Telegram bot: it asks for the token on first start, keeps it in module storage and
-long-polls the Bot API.
+only `time`, `date` and `clock`. In JavaScript failures are thrown as `Error`; in Python they
+raise `mf.Error` (a subclass of `OSError`), and `mf` needs no import there. Python also has
+thin `requests` and `open()` layers over `mf.http` and `mf.storage`.
+`examples/` holds complete modules: `lua-hello`, `telegram-echo-bot` (asks for the token on
+first start, keeps it in module storage, long-polls the Bot API), `js-counter`, `js-weather`
+and the Python `py-site-watch`.
 
 ### Updating a module
 
@@ -235,12 +254,16 @@ is a service the host performs for the module:
 | `BACKGROUND_EXECUTION` | Keeps the host alive with a foreground service and a notification while the module runs. A running module without this grant is stopped when the host leaves the screen. |
 
 | `NOTIFICATIONS` | Posts a notification that always carries the module's name. One slot per module: a new notification replaces the previous one. |
+| `LAUNCH_APPS` | Lists and opens the apps on the phone, and links. |
+| `SCREEN_CONTROL` | Touches and reads the screen of any app through the accessibility service (full edition only); a notification shows while it is used. |
+| `CAMERA` | Takes photos with the phone's cameras into the module's storage. |
 
 Without any capability a module can also ask the user a question (`prompt.ask`): the host
 shows a dialog that names the module and warns that the answer goes to it. This is how a
 bot gets its token or a login code without shipping them in the package.
 
 The remaining capabilities are defined and can be granted, but no host service uses them yet.
+Device services refuse system settings, permission dialogs, package installers and ModuForge itself.
 
 A module marked "Start automatically" is started when the device boots and whenever the
 host starts, provided it is enabled and holds `BACKGROUND_EXECUTION`. A script that runs to
