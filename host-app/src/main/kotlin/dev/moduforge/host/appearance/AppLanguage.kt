@@ -18,7 +18,12 @@ object AppLanguage {
     private const val KEY = "code"
 
     fun get(context: Context): String {
-        val code = context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY, SYSTEM) ?: SYSTEM
+        // An isolated sandbox process has no preferences at all (and nothing to translate).
+        val code = try {
+            context.getSharedPreferences(FILE, Context.MODE_PRIVATE).getString(KEY, SYSTEM) ?: SYSTEM
+        } catch (e: IllegalStateException) {
+            SYSTEM
+        }
         return if (SUPPORTED.any { it.first == code }) code else SYSTEM
     }
 
