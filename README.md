@@ -10,9 +10,9 @@ in its own sandbox. A module can do only what you allowed, and everything it doe
 network is written to a log you can read. The app does nothing on its own: every feature
 is a module.
 
-Version 1.0.0. Android 8.0 or newer. Download the APK from the
-[releases](https://github.com/voksed/ModuForge/releases/latest): `ModuForge-1.0.0.apk` is the
-standard edition and installs on any phone; `ModuForge-1.0.0-full.apk` adds screen control
+Version 1.1.0. Android 8.0 or newer. Download the APK from the
+[releases](https://github.com/voksed/ModuForge/releases/latest): `ModuForge-1.1.0.apk` is the
+standard edition and installs on any phone; `ModuForge-1.1.0-full.apk` adds screen control
 (`mf.screen`) through an accessibility service, which Google Play Protect may refuse to install
 from a browser or file manager ("blocked to protect the device") — use the standard one, or
 `adb install` the full one.
