@@ -33,10 +33,16 @@ modules, and decides what each of them may reach.
 - Module settings the user can change, and module output that is kept and can be shared.
 - Automatic start on boot, updates of installed modules, an audit log.
 - Updating the app itself from the releases on GitHub, on request.
-- For authors: `mfrg run` executes a module on the computer, `mfrg push` sends it to the
-  phone and shows its output, `mfrg pack` and `mfrg link` publish it. Libraries for
-  Telegram bots, settings and schedules in both languages.
+- For authors: `mfrg run` executes a module on the computer (`--watch` restarts it on every
+  save, `--mock` answers its network calls and questions from a file, `--speed` runs its clock
+  faster), `mfrg push` sends it to the phone and shows its output, `mfrg pack` and `mfrg link`
+  publish it. Libraries for Telegram bots, settings and schedules in all three languages.
+- Two editions: the standard one installs on any phone; the full one adds screen control
+  but, declaring an accessibility service, may be refused by Google Play Protect when
+  installed from a browser or file manager — see [Security model](security.md).
 - Themes: light, dark, wallpaper or custom colours, palettes, corner shapes, text size.
+- App language: the system default, English or Russian, set in Settings regardless of the
+  phone's own language.
 
 ## What does not exist yet
 

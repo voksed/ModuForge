@@ -55,6 +55,8 @@ bot:run()
 - **Install by link.** A link (or QR code) carries the author's key, so the app verifies
   the author instead of the user comparing fingerprints.
 - **Themes.** Light, dark, wallpaper or custom colours, palettes, corner shapes, text size.
+- **App language.** Settings → Language: the system default, English or Russian, independent
+  of the phone's own language.
 
 Not there yet: a module catalogue, a Google Play release
 (Play does not allow apps that run downloaded code; ModuForge is distributed as an APK).
@@ -211,10 +213,12 @@ Network and storage calls return `nil, message` on failure, including a missing 
 `require` loads other files of the package. `io` and `luajava` are not available; of `os`
 only `time`, `date` and `clock`. In JavaScript failures are thrown as `Error`; in Python they
 raise `mf.Error` (a subclass of `OSError`), and `mf` needs no import there. Python also has
-thin `requests` and `open()` layers over `mf.http` and `mf.storage`.
+thin `requests` and `open()` layers over `mf.http` and `mf.storage`, and the binary tools a
+protocol client needs — `struct`, `zlib`, `gzip`, `hmac`, `binascii`, `secrets`, `os.urandom`,
+`bytearray`, `io.BytesIO`, AES and PBKDF2 — without ever leaving the sandbox.
 `examples/` holds complete modules: `lua-hello`, `telegram-echo-bot` (asks for the token on
 first start, keeps it in module storage, long-polls the Bot API), `js-counter`, `js-weather`
-and the Python `py-site-watch`.
+and the Python `py-site-watch` and `py-echo-bot`.
 
 ### Updating a module
 
@@ -252,7 +256,6 @@ is a service the host performs for the module:
 | `NETWORK_OUTBOUND` | Opens TCP connections (optionally TLS, with certificate validation) and relays the bytes into the sandbox. Only public internet addresses: the device itself and the local network are refused. Every connection is audited; revoking the grant cuts open connections within seconds. |
 | `FILE_SANDBOXED` | Keeps the module's files, encrypted with a Keystore key, in a directory only that module can address. 512 KB per file, 64 MB per module. Removed on uninstall. This is where bot sessions and tokens belong. |
 | `BACKGROUND_EXECUTION` | Keeps the host alive with a foreground service and a notification while the module runs. A running module without this grant is stopped when the host leaves the screen. |
-
 | `NOTIFICATIONS` | Posts a notification that always carries the module's name. One slot per module: a new notification replaces the previous one. |
 | `LAUNCH_APPS` | Lists and opens the apps on the phone, and links. |
 | `SCREEN_CONTROL` | Touches and reads the screen of any app through the accessibility service (full edition only); a notification shows while it is used. |
